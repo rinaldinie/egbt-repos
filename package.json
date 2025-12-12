@@ -1,0 +1,30 @@
+{
+  "name": "epic-games-telegram-bot",
+  "version": "1.0.0",
+  "description": "Telegram bot that notifies when free games are available on Epic Games Store",
+  "main": "index-webhook.js",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "scripts": {
+    "start": "node index-webhook.js",
+    "test": "node test-api.js"
+  },
+  "dependencies": {
+    "node-telegram-bot-api": "^0.64.0",
+    "axios": "^1.6.2",
+    "node-cron": "^3.0.3",
+    "sqlite3": "^5.1.6",
+    "dotenv": "^16.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.5",
+    "@types/node-telegram-bot-api": "^0.64.3",
+    "@types/node-cron": "^3.0.11",
+    "tsx": "^4.6.2",
+    "typescript": "^5.3.3"
+  },
+  "keywords": ["telegram", "bot", "epic-games", "free-games"],
+  "author": "",
+  "license": "MIT"
+}
