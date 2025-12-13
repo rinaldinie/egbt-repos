@@ -28,7 +28,7 @@ class EpicGamesBot {
       this.bot = new TelegramBot(this.botToken, {
         webHook: {
             host: '0.0.0.0', 
-            port: PORT
+            port: process.env.PORT
         }
     });
 	  
