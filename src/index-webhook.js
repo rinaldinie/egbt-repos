@@ -25,7 +25,13 @@ class EpicGamesBot {
 
     // Configura il bot per webhook o polling
     if (this.useWebhook && this.webhookUrl) {
-      this.bot = new TelegramBot(this.botToken, { webHook: true });
+      this.bot = new TelegramBot(this.botToken, {
+        webHook: {
+            host: '0.0.0.0', 
+            port: PORT
+        }
+    });
+	  
       this.bot.setWebHook(this.webhookUrl);
     } else {
       this.bot = new TelegramBot(this.botToken, { polling: true });
