@@ -25,22 +25,8 @@ class EpicGamesBot {
 
     // Configura il bot per webhook o polling
     if (this.useWebhook && this.webhookUrl) {
-      this.bot = new TelegramBot(this.botToken, { webHook: true }); // Rimuovi l'opzione host/port qui
-	  
+      this.bot = new TelegramBot(this.botToken, { webHook: true });
       this.bot.setWebHook(this.webhookUrl);
-
-      // Aggiungi la chiamata esplicita per avviare l'ascolto
-      const PORT = process.env.PORT; 
-      if (PORT) {
-        this.bot.openWebHook(undefined, {
-          port: parseInt(PORT),
-          host: '0.0.0.0' // Assicurati che ascolti su 0.0.0.0
-        });
-        console.log(`🌐 Webhook server avviato sulla porta ${PORT}`);
-      } else {
-         throw new Error("PORT environment variable not found. Cannot start webhook server.");
-      }
-
     } else {
       this.bot = new TelegramBot(this.botToken, { polling: true });
     }
@@ -54,9 +40,9 @@ class EpicGamesBot {
       this.setupBotHandlers();
       this.setupScheduler();
       
-      // if (this.useWebhook) {
-      //   this.setupWebhookServer();
-      // }
+      if (this.useWebhook) {
+        this.setupWebhookServer();
+      }
       
       console.log('✅ Bot Epic Games inizializzato con successo!');
       console.log(`🔧 Modalità: ${this.useWebhook ? 'Webhook' : 'Polling'}`);
