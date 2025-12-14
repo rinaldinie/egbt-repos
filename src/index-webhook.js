@@ -46,9 +46,9 @@ class EpicGamesBot {
       this.setupBotHandlers();
       this.setupScheduler();
       
-      if (this.useWebhook) {
-        this.setupWebhookServer();
-      }
+      // if (this.useWebhook) {
+      //   this.setupWebhookServer();
+      // }
       
       console.log('✅ Bot Epic Games inizializzato con successo!');
       console.log(`🔧 Modalità: ${this.useWebhook ? 'Webhook' : 'Polling'}`);
