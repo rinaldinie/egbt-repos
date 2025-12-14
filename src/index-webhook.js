@@ -53,8 +53,17 @@ class EpicGamesBot {
   }
 
   setupWebhookServer() {
-    const PORT = process.env.PORT || 3000;
+    const PORT = process.env.PORT;
     
+    if (!PORT) {
+            console.error("❌ ERRORE FATALE: Variabile PORT non trovata. Impossibile avviare il server.");
+            process.exit(1); // Forza l'uscita se la variabile non esiste (non dovrebbe accadere su Render)
+            return;
+        }
+
+    // Per sicurezza, convertiamo sempre in intero
+    const listenPort = parseInt(PORT);
+
     const server = http.createServer((req, res) => {
       // Health check endpoint
       if (req.method === 'GET' && req.url === '/health') {
@@ -93,9 +102,9 @@ class EpicGamesBot {
       res.end('Not Found');
     });
 
-    server.listen(PORT, () => {
-      console.log(`🌐 Server webhook in ascolto sulla porta ${PORT}`);
-      console.log(`🔗 Health check: http://localhost:${PORT}/health`);
+    server.listen(listenPort, () => {
+      console.log(`🌐 Server webhook in ascolto sulla porta ${listenPort}`);
+      console.log(`🔗 Health check: http://localhost:${listenPort}/health`);
       console.log(`🪝 Webhook URL: ${this.webhookUrl}`);
     });
   }
