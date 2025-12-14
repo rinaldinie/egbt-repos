@@ -39,11 +39,11 @@ class EpicGamesBot {
       await this.initDatabase();
       this.setupBotHandlers();
       this.setupScheduler();
-      
+
       if (this.useWebhook) {
         this.setupWebhookServer();
       }
-      
+
       console.log('✅ Bot Epic Games inizializzato con successo!');
       console.log(`🔧 Modalità: ${this.useWebhook ? 'Webhook' : 'Polling'}`);
     } catch (error) {
@@ -54,19 +54,19 @@ class EpicGamesBot {
 
   setupWebhookServer() {
     const PORT = process.env.PORT || 3000;
-    
+
     const server = http.createServer((req, res) => {
       // Health check endpoint
       if (req.method === 'GET' && req.url === '/health') {
         res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ 
-          status: 'ok', 
+        res.end(JSON.stringify({
+          status: 'ok',
           timestamp: new Date().toISOString(),
           mode: 'webhook'
         }));
         return;
       }
-      
+
       // Webhook endpoint
       if (req.method === 'POST' && req.url === '/webhook') {
         let body = '';
@@ -87,7 +87,7 @@ class EpicGamesBot {
         });
         return;
       }
-      
+
       // 404 per altre rotte
       res.writeHead(404);
       res.end('Not Found');
@@ -151,7 +151,7 @@ class EpicGamesBot {
 
       try {
         await this.saveUser(user);
-        
+
         const welcomeMessage = `🎮 *Benvenuto nel Bot Epic Games Free!*
 
 Ti notificherò quando ci sono nuovi giochi gratuiti sull'Epic Games Store.
@@ -177,7 +177,7 @@ Sei già iscritto alle notifiche! 🎉`;
     // Comando /help
     this.bot.onText(/\/help/, async (msg) => {
       const chatId = msg.chat.id;
-      
+
       const helpMessage = `🤖 *Aiuto - Bot Epic Games Free*
 
 📋 *Comandi disponibili:*
@@ -212,7 +212,7 @@ Per domande o problemi, contatta l'amministratore del bot.`;
       try {
         await this.saveUser(user);
         await this.updateSubscription(user.id, true);
-        
+
         await this.bot.sendMessage(chatId, '✅ Sei ora iscritto alle notifiche dei giochi gratuiti! Riceverai un avviso ogni volta che ci sono nuovi giochi gratuiti sull\'Epic Games Store.');
       } catch (error) {
         console.error('Errore nel comando /subscribe:', error);
@@ -239,9 +239,9 @@ Per domande o problemi, contatta l'amministratore del bot.`;
     // Comando /check
     this.bot.onText(/\/check/, async (msg) => {
       const chatId = msg.chat.id;
-      
+
       await this.bot.sendMessage(chatId, '🔍 Sto controllando i giochi gratuiti attuali...');
-      
+
       try {
         const freeGames = await this.getFreeGames();
         if (freeGames.length > 0) {
@@ -316,7 +316,7 @@ Per domande o problemi, contatta l'amministratore del bot.`;
 
     return new Promise((resolve, reject) => {
       const endDate = this.getPromotionEndDate(game);
-      
+
       this.db.run(`
         INSERT OR REPLACE INTO notified_games (id, title, end_date)
         VALUES (?, ?, ?)
@@ -331,7 +331,7 @@ Per domande o problemi, contatta l'amministratore del bot.`;
     try {
       // Endpoint parametrizzato per l'Italia
       const apiUrl = 'https://store-site-backend-static.ak.epicgames.com/freeGamesPromotions?locale=it-IT&country=IT&allowCountries=IT';
-      
+
       const response = await axios.get(apiUrl, {
         headers: {
           'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
@@ -394,7 +394,7 @@ Per domande o problemi, contatta l'amministratore del bot.`;
   async sendFreeGamesMessage(chatId, games) {
     // Invia un messaggio introduttivo
     let introMessage = `🎮 *Ci sono ${games.length} giochi gratuiti sull'Epic Games Store!*\n\n`;
-    
+
     if (games.length === 1) {
       introMessage += `Ecco il gioco gratuito disponibile:`;
     } else {
@@ -410,10 +410,10 @@ Per domande o problemi, contatta l'amministratore del bot.`;
       const game = games[i];
       const promotionEndDate = this.getPromotionEndDate(game);
       const endDate = promotionEndDate ? new Date(promotionEndDate).toLocaleDateString('it-IT') : 'Data non disponibile';
-      
+
       // Costruisci il link diretto al gioco
       const gameUrl = this.buildGameUrl(game);
-      
+
       // Crea un messaggio con il link diretto per l'anteprima
       let gameMessage = `🎯 *${game.title}*\n\n`;
       gameMessage += `⏰ *Disponibile fino al:* ${endDate}\n\n`;
@@ -431,11 +431,11 @@ Per domande o problemi, contatta l'amministratore del bot.`;
     }
 
     // Invia un messaggio finale con il consiglio
-    const finalMessage = `💡 *Consiglio:* Collega il tuo account Epic Games per ricevere questi giochi permanentemente nella tua libreria!`;
+    // const finalMessage = `💡 *Consiglio:* Collega il tuo account Epic Games per ricevere questi giochi permanentemente nella tua libreria!`;
 
-    await this.bot.sendMessage(chatId, finalMessage, {
-      parse_mode: 'Markdown'
-    });
+    // await this.bot.sendMessage(chatId, finalMessage, {
+    //   parse_mode: 'Markdown'
+    // });
   }
 
   buildGameUrl(game) {
@@ -443,23 +443,23 @@ Per domande o problemi, contatta l'amministratore del bot.`;
     if (game.url) {
       return game.url;
     }
-    
+
     if (game.productSlug) {
       return `https://store.epicgames.com/it/p/${game.productSlug}`;
     }
-    
+
     if (game.offerMappings && game.offerMappings.length > 0) {
       const mapping = game.offerMappings[0];
       if (mapping.pageSlug) {
         return `https://store.epicgames.com/it/p/${mapping.pageSlug}`;
       }
     }
-    
+
     // Fallback: usa l'ID del gioco
     if (game.id) {
       return `https://store.epicgames.com/it/p/${game.id}`;
     }
-    
+
     // Fallback finale: link alla ricerca
     return `https://store.epicgames.com/it/browse?q=${encodeURIComponent(game.title)}`;
   }
@@ -487,12 +487,12 @@ Per domande o problemi, contatta l'amministratore del bot.`;
 
   async notifyAllUsers(freeGames) {
     const users = await this.getSubscribedUsers();
-    
+
     for (const user of users) {
       try {
         await this.sendFreeGamesMessage(user.chat_id, freeGames);
         console.log(`✅ Notifica inviata a ${user.username || user.first_name} (ID: ${user.id})`);
-        
+
         // Piccolo delay tra le notifiche per evitare rate limiting
         await new Promise(resolve => setTimeout(resolve, 1000));
       } catch (error) {
@@ -503,7 +503,7 @@ Per domande o problemi, contatta l'amministratore del bot.`;
 
   async checkAndNotifyFreeGames() {
     console.log('🔍 Controllo giornaliero dei giochi gratuiti...');
-    
+
     try {
       const freeGames = await this.getFreeGames();
       const newFreeGames = [];
