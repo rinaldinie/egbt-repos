@@ -53,17 +53,8 @@ class EpicGamesBot {
   }
 
   setupWebhookServer() {
-    const PORT = process.env.PORT;
+    const PORT = process.env.PORT || 3000;
     
-    if (!PORT) {
-            console.error("❌ ERRORE FATALE: Variabile PORT non trovata. Impossibile avviare il server.");
-            process.exit(1); // Forza l'uscita se la variabile non esiste (non dovrebbe accadere su Render)
-            return;
-        }
-
-    // Per sicurezza, convertiamo sempre in intero
-    const listenPort = parseInt(PORT);
-
     const server = http.createServer((req, res) => {
       // Health check endpoint
       if (req.method === 'GET' && req.url === '/health') {
@@ -102,9 +93,9 @@ class EpicGamesBot {
       res.end('Not Found');
     });
 
-    server.listen(listenPort, () => {
-      console.log(`🌐 Server webhook in ascolto sulla porta ${listenPort}`);
-      console.log(`🔗 Health check: http://localhost:${listenPort}/health`);
+    server.listen(PORT, () => {
+      console.log(`🌐 Server webhook in ascolto sulla porta ${PORT}`);
+      console.log(`🔗 Health check: http://localhost:${PORT}/health`);
       console.log(`🪝 Webhook URL: ${this.webhookUrl}`);
     });
   }
@@ -401,25 +392,76 @@ Per domande o problemi, contatta l'amministratore del bot.`;
   }
 
   async sendFreeGamesMessage(chatId, games) {
-    let message = '🎮 *Giochi Gratuiti sull\'Epic Games Store!*\n\n';
+    // Invia un messaggio introduttivo
+    let introMessage = `🎮 *Ci sono ${games.length} giochi gratuiti sull'Epic Games Store!*\n\n`;
+    
+    if (games.length === 1) {
+      introMessage += `Ecco il gioco gratuito disponibile:`;
+    } else {
+      introMessage += `Ecco i giochi gratuiti disponibili:`;
+    }
 
-    for (const game of games) {
+    await this.bot.sendMessage(chatId, introMessage, {
+      parse_mode: 'Markdown'
+    });
+
+    // Invia ogni gioco come un messaggio separato per l'anteprima
+    for (let i = 0; i < games.length; i++) {
+      const game = games[i];
       const promotionEndDate = this.getPromotionEndDate(game);
       const endDate = promotionEndDate ? new Date(promotionEndDate).toLocaleDateString('it-IT') : 'Data non disponibile';
       
-      message += `🎯 *${game.title}*\n`;
-      message += `📝 ${game.description.substring(0, 200)}...\n\n`;
-      message += `⏰ *Disponibile fino al:* ${endDate}\n`;
-      message += `🔗 [Riscuoti il gioco](${game.url})\n\n`;
-      message += `➖➖➖\n\n`;
+      // Costruisci il link diretto al gioco
+      const gameUrl = this.buildGameUrl(game);
+      
+      // Crea un messaggio con il link diretto per l'anteprima
+      let gameMessage = `🎯 *${game.title}*\n\n`;
+      gameMessage += `⏰ *Disponibile fino al:* ${endDate}\n\n`;
+      gameMessage += `${gameUrl}`;
+
+      await this.bot.sendMessage(chatId, gameMessage, {
+        parse_mode: 'Markdown',
+        disable_web_page_preview: false
+      });
+
+      // Piccolo delay tra i messaggi per evitare rate limiting
+      if (i < games.length - 1) {
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
     }
 
-    message += `💡 *Consiglio:* Collega il tuo account Epic Games per ricevere questi giochi permanentemente nella tua libreria!`;
+    // Invia un messaggio finale con il consiglio
+    const finalMessage = `💡 *Consiglio:* Collega il tuo account Epic Games per ricevere questi giochi permanentemente nella tua libreria!`;
 
-    await this.bot.sendMessage(chatId, message, {
-      parse_mode: 'Markdown',
-      disable_web_page_preview: false
+    await this.bot.sendMessage(chatId, finalMessage, {
+      parse_mode: 'Markdown'
     });
+  }
+
+  buildGameUrl(game) {
+    // Metodi per costruire il link del gioco in ordine di priorità
+    if (game.url) {
+      return game.url;
+    }
+    
+    if (game.productSlug) {
+      return `https://store.epicgames.com/it/p/${game.productSlug}`;
+    }
+    
+    if (game.offerMappings && game.offerMappings.length > 0) {
+      const mapping = game.offerMappings[0];
+      if (mapping.pageSlug) {
+        return `https://store.epicgames.com/it/p/${mapping.pageSlug}`;
+      }
+    }
+    
+    // Fallback: usa l'ID del gioco
+    if (game.id) {
+      return `https://store.epicgames.com/it/p/${game.id}`;
+    }
+    
+    // Fallback finale: link alla ricerca
+    return `https://store.epicgames.com/it/browse?q=${encodeURIComponent(game.title)}`;
   }
 
   getPromotionEndDate(game) {
