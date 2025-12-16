@@ -26,7 +26,7 @@ class EpicGamesBot {
     this.useWebhook = process.env.USE_WEBHOOK === 'true';
 
     // ID dell'amministratore (da impostare nelle variabili d'ambiente)
-    this.adminId = process.env.ADMIN_ID ? parseInt(process.env.ADMIN_ID) : null;
+    this.adminId = process.env.ADMIN_ID;
 
     if (!this.botToken) {
       throw new Error('TELEGRAM_BOT_TOKEN is required');
