@@ -48,7 +48,19 @@ class DiagnosticsService {
    */
   async sendDiagnosticsMessage(bot, chatId, diagnostics) {
     const { users, games, database } = diagnostics;
-    
+
+    // Pulisci e sanitizza il testo per evitare errori di parsing
+    const sanitizeText = (text) => {
+      return text
+        .replace(/[^\x00-\x7F]/g, '') // Rimuovi caratteri non-ASCII
+        .replace(/[\u{1F600}-\u{1F64F}]/g, '') // Rimuovi emoji problematiche
+        .replace(/[\u{1F300}-\u{1F5FF}]/g, '') // Rimuovi simboli problematici
+        .replace(/[\u{1F680}-\u{1F6FF}]/g, '') // Rimuovi simboli tecnici problematici
+        .replace(/[\u{2600}-\u{26FF}]/g, '') // Rimuovi simboli misc problematici
+        .replace(/[\u{2700}-\u{27BF}]/g, '') // Rimuovi simboli dingbats problematici
+        .trim();
+    };
+
     // Messaggio introduttivo
     let introMessage = `🔧 *Report Diagnostica Bot Epic Games*\n\n`;
     introMessage += `📊 *Statistiche Generali:*\n`;
@@ -58,14 +70,14 @@ class DiagnosticsService {
     introMessage += `🎮 Giochi notificati: ${games.notified}\n`;
     introMessage += `🆓 Giochi gratuiti attuali: ${games.currentlyFree}\n`;
 
-    await bot.sendMessage(chatId, introMessage, {
+    await bot.sendMessage(chatId, sanitizeText(introMessage), {
       parse_mode: 'Markdown'
     });
 
     // Lista utenti iscritti
     if (users.subscribed > 0) {
       let usersMessage = `👥 *Utenti Iscritti (${users.subscribed}):*\n\n`;
-      
+
       users.list
         .filter(user => user.subscribed === 1)
         .slice(0, 10) // Limita a 10 per evitare messaggi troppo lunghi
@@ -80,7 +92,7 @@ class DiagnosticsService {
         usersMessage += `... e altri ${users.subscribed - 10} utenti`;
       }
 
-      await bot.sendMessage(chatId, usersMessage, {
+      await bot.sendMessage(chatId, sanitizeText(usersMessage), {
         parse_mode: 'Markdown'
       });
     }
@@ -88,7 +100,7 @@ class DiagnosticsService {
     // Lista giochi notificati
     if (games.notified > 0) {
       let gamesMessage = `🎮 *Giochi Notificati (${games.notified}):*\n\n`;
-      
+
       games.notifiedList
         .slice(0, 10) // Limita a 10 per evitare messaggi troppo lunghi
         .forEach((game, index) => {
@@ -105,7 +117,7 @@ class DiagnosticsService {
         gamesMessage += `... e altri ${games.notified - 10} giochi`;
       }
 
-      await bot.sendMessage(chatId, gamesMessage, {
+      await bot.sendMessage(chatId, sanitizeText(gamesMessage), {
         parse_mode: 'Markdown'
       });
     }
@@ -123,7 +135,7 @@ class DiagnosticsService {
     // Giochi gratuiti attuali
     if (games.currentlyFree > 0) {
       let currentGamesMessage = `🆓 *Giochi Gratuiti Attuali (${games.currentlyFree}):*\n\n`;
-      
+
       games.currentFreeList.forEach((game, index) => {
         currentGamesMessage += `${index + 1}. *${game.title}*\n`;
         const endDate = this.epicGames.getPromotionEndDate(game);
@@ -133,7 +145,7 @@ class DiagnosticsService {
         currentGamesMessage += `   🆔 ID: ${game.id}\n\n`;
       });
 
-      await bot.sendMessage(chatId, currentGamesMessage, {
+      await bot.sendMessage(chatId, sanitizeText(currentGamesMessage), {
         parse_mode: 'Markdown'
       });
     }
@@ -144,21 +156,21 @@ class DiagnosticsService {
    */
   printDiagnostics(diagnostics) {
     const { users, games, database } = diagnostics;
-    
+
     console.log('🔧 DIAGNOSTICA DATABASE BOT EPIC GAMES');
     console.log('='.repeat(50));
-    
+
     console.log('\n📊 STATISTICHE GENERALI:');
     console.log(`👥 Utenti totali: ${users.total}`);
     console.log(`✅ Utenti iscritti: ${users.subscribed}`);
     console.log(`❌ Utenti disiscritti: ${users.unsubscribed}`);
     console.log(`🎮 Giochi notificati: ${games.notified}`);
-    
+
     console.log('\n💾 INFORMAZIONI DATABASE:');
     console.log(`📁 Percorso: ${database.path}`);
     console.log(`🗃️ Tabelle: ${database.tables.join(', ')}`);
     console.log(`📊 Ultimo aggiornamento: ${new Date().toLocaleString('it-IT')}`);
-    
+
     if (users.subscribed > 0) {
       console.log('\n👥 UTENTI ISCRITTI:');
       users.list
@@ -170,7 +182,7 @@ class DiagnosticsService {
           console.log(`   📅 Iscritto il: ${joinDate}`);
         });
     }
-    
+
     if (games.notified > 0) {
       console.log('\n🎮 GIOCHI NOTIFICATI:');
       games.notifiedList.forEach((game, index) => {
@@ -183,7 +195,7 @@ class DiagnosticsService {
         console.log(`   🆔 ID: ${game.id}`);
       });
     }
-    
+
     console.log('\n' + '='.repeat(50));
   }
 }
