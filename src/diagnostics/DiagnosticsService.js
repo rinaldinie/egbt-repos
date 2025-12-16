@@ -70,6 +70,7 @@ class DiagnosticsService {
     introMessage += `🎮 Giochi notificati: ${games.notified}\n`;
     introMessage += `🆓 Giochi gratuiti attuali: ${games.currentlyFree}\n`;
 
+    console.log(introMessage);
     await bot.sendMessage(chatId, sanitizeText(introMessage), {
       parse_mode: 'markdown'
     });
@@ -92,6 +93,7 @@ class DiagnosticsService {
         usersMessage += `... e altri ${users.subscribed - 10} utenti`;
       }
 
+      console.log(usersMessage);
       await bot.sendMessage(chatId, sanitizeText(usersMessage), {
         parse_mode: 'markdown'
       });
@@ -117,6 +119,7 @@ class DiagnosticsService {
         gamesMessage += `... e altri ${games.notified - 10} giochi`;
       }
 
+      console.log(gamesMessage);
       await bot.sendMessage(chatId, sanitizeText(gamesMessage), {
         parse_mode: 'markdown'
       });
@@ -128,6 +131,7 @@ class DiagnosticsService {
     dbMessage += `🗃️ Tabelle: ${database.tables.join(', ')}\n`;
     dbMessage += `📊 Ultimo aggiornamento: ${new Date().toLocaleString('it-IT')}`;
 
+    console.log(dbMessage);
     await bot.sendMessage(chatId, sanitizeText(dbMessage), {
       parse_mode: 'markdown'
     });
