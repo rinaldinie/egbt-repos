@@ -71,7 +71,7 @@ class DiagnosticsService {
     introMessage += `🆓 Giochi gratuiti attuali: ${games.currentlyFree}\n`;
 
     await bot.sendMessage(chatId, sanitizeText(introMessage), {
-      parse_mode: 'Markdown'
+      parse_mode: 'markdown'
     });
 
     // Lista utenti iscritti
@@ -93,7 +93,7 @@ class DiagnosticsService {
       }
 
       await bot.sendMessage(chatId, sanitizeText(usersMessage), {
-        parse_mode: 'Markdown'
+        parse_mode: 'markdown'
       });
     }
 
@@ -118,7 +118,7 @@ class DiagnosticsService {
       }
 
       await bot.sendMessage(chatId, sanitizeText(gamesMessage), {
-        parse_mode: 'Markdown'
+        parse_mode: 'markdown'
       });
     }
 
@@ -128,8 +128,8 @@ class DiagnosticsService {
     dbMessage += `🗃️ Tabelle: ${database.tables.join(', ')}\n`;
     dbMessage += `📊 Ultimo aggiornamento: ${new Date().toLocaleString('it-IT')}`;
 
-    await bot.sendMessage(chatId, dbMessage, {
-      parse_mode: 'Markdown'
+    await bot.sendMessage(chatId, sanitizeText(dbMessage), {
+      parse_mode: 'markdown'
     });
 
     // Giochi gratuiti attuali
@@ -146,7 +146,7 @@ class DiagnosticsService {
       });
 
       await bot.sendMessage(chatId, sanitizeText(currentGamesMessage), {
-        parse_mode: 'Markdown'
+        parse_mode: 'HTML'
       });
     }
   }
