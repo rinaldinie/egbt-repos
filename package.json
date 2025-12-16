@@ -8,7 +8,18 @@
   },
   "scripts": {
     "start": "node index-webhook.js",
-    "test": "node test-api.js"
+    "start:modular": "node index-modular.js",
+    "test": "node test-api.js",
+    "test:modular": "node test-api-modular.js",
+    "test:diagnostics": "node test-diagnostics.js",
+    "test:diagnostics:modular": "node test-diagnostics-modular.js",
+    "setup:test-db": "node setup-test-db.js",
+    "setup:test-db:modular": "node setup-test-db-modular.js",
+    "demo:message": "node demo-message.js",
+    "demo:diagnostics": "node demo-diagnostics.js",
+    "demo:security": "node demo-security.js",
+    "find:user-id": "node find-user-id.js",
+    "find:user-id:modular": "node find-user-id-modular.js"
   },
   "dependencies": {
     "node-telegram-bot-api": "^0.64.0",
@@ -17,14 +28,12 @@
     "sqlite3": "^5.1.6",
     "dotenv": "^16.3.1"
   },
-  "devDependencies": {
-    "@types/node": "^20.10.5",
-    "@types/node-telegram-bot-api": "^0.64.3",
-    "@types/node-cron": "^3.0.11",
-    "tsx": "^4.6.2",
-    "typescript": "^5.3.3"
-  },
-  "keywords": ["telegram", "bot", "epic-games", "free-games"],
+  "keywords": [
+    "telegram",
+    "bot",
+    "epic-games",
+    "free-games"
+  ],
   "author": "",
   "license": "MIT"
 }
