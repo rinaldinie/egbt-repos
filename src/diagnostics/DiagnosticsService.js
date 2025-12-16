@@ -132,9 +132,9 @@ class DiagnosticsService {
     dbMessage += `📊 Ultimo aggiornamento: ${new Date().toLocaleString('it-IT')}`;
 
     console.log(dbMessage);
-    await bot.sendMessage(chatId, sanitizeText(dbMessage), {
-      parse_mode: 'markdown'
-    });
+    // await bot.sendMessage(chatId, sanitizeText(dbMessage), {
+    //   parse_mode: 'markdown'
+    // });
 
     // Giochi gratuiti attuali
     if (games.currentlyFree > 0) {
