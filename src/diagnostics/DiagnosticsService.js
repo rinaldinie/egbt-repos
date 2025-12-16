@@ -56,7 +56,7 @@ class DiagnosticsService {
         //.replace(/[\u{1F600}-\u{1F64F}]/g, '') // Rimuovi emoji problematiche
         .replace(/[\u{1F300}-\u{1F5FF}]/gu, '') // Rimuovi simboli problematici
         .replace(/[\u{1F680}-\u{1F6FF}]/gu, '') // Rimuovi simboli tecnici problematici
-        .replace(/[\u{2600}-\u{26FF}]/g, '') // Rimuovi simboli misc problematici
+        .replace(/[\u{2600}-\u{26FF}]/gu, '') // Rimuovi simboli misc problematici
         .replace(/[\u{2700}-\u{27BF}]/gu, '') // Rimuovi simboli dingbats problematici
         .trim();
     };
