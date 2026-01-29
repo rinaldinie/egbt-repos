@@ -172,6 +172,26 @@ class EpicGamesBot {
         return;
       }
 
+      // API endpoint per aggiungere utenti
+      if (req.method === 'POST' && req.url === '/api/users') {
+        let body = '';
+        req.on('data', chunk => {
+          body += chunk.toString();
+        });
+        req.on('end', async () => {
+          try {
+            const data = JSON.parse(body);
+            await this.databaseManager.saveUserFromDashboard(data);
+            res.writeHead(201, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ message: 'Utente aggiunto con successo' }));
+          } catch (error) {
+            res.writeHead(500, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: error.message }));
+          }
+        });
+        return;
+      }
+
       // 404 per altre rotte
       res.writeHead(404);
       res.end('Not Found');

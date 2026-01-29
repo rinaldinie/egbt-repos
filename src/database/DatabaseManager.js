@@ -116,6 +116,30 @@ class DatabaseManager {
   }
 
   /**
+   * Salva un utente dalla dashboard
+   */
+  async saveUserFromDashboard(data) {
+    await this.prisma.user.upsert({
+      where: { telegramId: data.telegramId },
+      update: {
+        chatId: data.chatId,
+        username: data.username,
+        firstName: data.firstName,
+        isGroup: data.isGroup,
+        subscribed: true
+      },
+      create: {
+        telegramId: data.telegramId,
+        chatId: data.chatId,
+        username: data.username,
+        firstName: data.firstName,
+        isGroup: data.isGroup,
+        subscribed: true
+      }
+    });
+  }
+
+  /**
    * Aggiorna lo stato di sottoscrizione di un utente
    */
   async updateSubscription(userId, subscribed) {

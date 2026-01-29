@@ -139,6 +139,72 @@
             background: #f39c12;
             color: #1a1a2e;
         }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            color: #a0aec0;
+            margin-bottom: 5px;
+            font-size: 0.9em;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #2d3748;
+            border-radius: 6px;
+            background: #0f3460;
+            color: #fff;
+            font-size: 1em;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #f39c12;
+        }
+
+        .btn {
+            background: #48bb78;
+            color: #fff;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1em;
+            width: 100%;
+        }
+
+        .btn:hover {
+            background: #38a169;
+        }
+
+        .btn-secondary {
+            background: #4299e1;
+        }
+
+        .btn-secondary:hover {
+            background: #3182ce;
+        }
+
+        .message {
+            padding: 10px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            display: none;
+        }
+
+        .message.success {
+            background: #48bb78;
+            display: block;
+        }
+
+        .message.error {
+            background: #e94560;
+            display: block;
+        }
     </style>
 </head>
 
@@ -208,11 +274,102 @@
             </div>
         </div>
 
+        <div class="grid">
+            <div class="card">
+                <h2>➕ Aggiungi Utente/Gruppo</h2>
+                <div id="message" class="message"></div>
+                <form id="addUserForm">
+                    <div class="form-group">
+                        <label>Telegram ID *</label>
+                        <input type="number" name="telegramId" required
+                            placeholder="es: 123456789 (negativo per gruppi)">
+                    </div>
+                    <div class="form-group">
+                        <label>Chat ID *</label>
+                        <input type="number" name="chatId" required placeholder="es: 123456789">
+                    </div>
+                    <div class="form-group">
+                        <label>Username (opzionale)</label>
+                        <input type="text" name="username" placeholder="es: mario_rossi">
+                    </div>
+                    <div class="form-group">
+                        <label>Nome/Gruppo *</label>
+                        <input type="text" name="firstName" required placeholder="es: Mario Rossi o Nome Gruppo">
+                    </div>
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" name="isGroup"> È un gruppo
+                        </label>
+                    </div>
+                    <button type="submit" class="btn">Aggiungi</button>
+                </form>
+            </div>
+
+            <div class="card">
+                <h2>📋 Istruzioni</h2>
+                <div style="color: #a0aec0; line-height: 1.6;">
+                    <p><strong>Per aggiungere un utente:</strong></p>
+                    <ul style="margin-left: 20px; margin-bottom: 15px;">
+                        <li>Telegram ID: ID dell'utente (positivo)</li>
+                        <li>Chat ID: solitamente uguale al Telegram ID</li>
+                        <li>Nome: nome visualizzato dell'utente</li>
+                    </ul>
+                    <p><strong>Per aggiungere un gruppo:</strong></p>
+                    <ul style="margin-left: 20px;">
+                        <li>Telegram ID: ID del gruppo (negativo, es: -123456789)</li>
+                        <li>Chat ID: uguale al Telegram ID</li>
+                        <li>Nome: nome del gruppo</li>
+                        <li>Spunta "È un gruppo"</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
         <div class="footer">
             <p>Ultimo aggiornamento: {{TIMESTAMP}}</p>
             <p>Epic Games Bot - Dashboard</p>
         </div>
     </div>
+
+    <script>
+        document.getElementById('addUserForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const form = e.target;
+            const formData = new FormData(form);
+            const data = {
+                telegramId: parseInt(formData.get('telegramId')),
+                chatId: parseInt(formData.get('chatId')),
+                username: formData.get('username') || null,
+                firstName: formData.get('firstName'),
+                isGroup: formData.has('isGroup')
+            };
+
+            const messageEl = document.getElementById('message');
+
+            try {
+                const response = await fetch('/api/users', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    messageEl.textContent = '✅ ' + result.message;
+                    messageEl.className = 'message success';
+                    form.reset();
+                    setTimeout(() => location.reload(), 1500);
+                } else {
+                    messageEl.textContent = '❌ ' + (result.error || 'Errore sconosciuto');
+                    messageEl.className = 'message error';
+                }
+            } catch (error) {
+                messageEl.textContent = '❌ Errore di connessione';
+                messageEl.className = 'message error';
+            }
+        });
+    </script>
 </body>
 
 </html>
