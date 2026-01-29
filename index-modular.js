@@ -13,6 +13,7 @@ const DatabaseManager = require('./src/database/DatabaseManager');
 const EpicGamesService = require('./src/services/EpicGamesService');
 const DiagnosticsService = require('./src/diagnostics/DiagnosticsService');
 const CommandHandler = require('./src/handlers/CommandHandler');
+const DashboardService = require('./src/dashboard/DashboardService');
 
 // Carica le variabili d'ambiente
 dotenv.config();
@@ -35,6 +36,7 @@ class EpicGamesBot {
     this.databaseManager = new DatabaseManager();
     this.epicGamesService = new EpicGamesService();
     this.diagnosticsService = new DiagnosticsService(this.databaseManager, this.epicGamesService);
+    this.dashboardService = new DashboardService(this.databaseManager, this.epicGamesService, this.diagnosticsService);
 
     // Configura il bot per webhook o polling
     if (this.useWebhook && this.webhookUrl) {
@@ -157,6 +159,19 @@ class EpicGamesBot {
         return;
       }
 
+      // Dashboard endpoint
+      if (req.method === 'GET' && req.url === '/dashboard') {
+        try {
+          const html = await this.dashboardService.generateDashboard();
+          res.writeHead(200, { 'Content-Type': 'text/html' });
+          res.end(html);
+        } catch (error) {
+          res.writeHead(500, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'Dashboard error', details: error.message }));
+        }
+        return;
+      }
+
       // 404 per altre rotte
       res.writeHead(404);
       res.end('Not Found');
@@ -165,6 +180,7 @@ class EpicGamesBot {
     server.listen(PORT, () => {
       console.log(`🌐 Server webhook in ascolto sulla porta ${PORT}`);
       console.log(`🔗 Health check: http://localhost:${PORT}/health`);
+      console.log(`📊 Dashboard: http://localhost:${PORT}/dashboard`);
       console.log(`🪝 Webhook URL: ${this.webhookUrl}`);
     });
   }
