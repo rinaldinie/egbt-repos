@@ -1,0 +1,32 @@
+// Prisma schema for Epic Games Telegram Bot
+// Migration from SQLite to PostgreSQL
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id         Int      @id @default(autoincrement()) @map("id")
+  telegramId Int      @unique @map("telegramid")
+  username   String?  @map("username")
+  firstName  String?  @map("firstname")
+  chatId     Int      @unique @map("chatid")
+  subscribed Boolean  @default(true) @map("subscribed")
+  createdAt  DateTime @default(now()) @map("createdat")
+  isGroup    Boolean  @default(false) @map("isgroup")
+
+  @@map("users")
+}
+
+model NotifiedGame {
+  id         String   @id @map("id")
+  title      String   @map("title")
+  notifiedAt DateTime @default(now()) @map("notifiedat")
+  endDate    String?  @map("enddate")
+
+  @@map("notified_games")
+}

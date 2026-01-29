@@ -20,8 +20,7 @@ dotenv.config();
 class EpicGamesBot {
   constructor() {
     this.botToken = process.env.TELEGRAM_BOT_TOKEN || '';
-    this.dbPath = process.env.DATABASE_PATH || './bot.db';
-    this.checkSchedule = process.env.CHECK_SCHEDULE || '0 18 * * *';
+    this.checkSchedule = process.env.CHECK_SCHEDULE || '0 17 * * *';
     this.webhookUrl = process.env.WEBHOOK_URL || '';
     this.useWebhook = process.env.USE_WEBHOOK === 'true';
 
@@ -33,7 +32,7 @@ class EpicGamesBot {
     }
 
     // Inizializza i servizi
-    this.databaseManager = new DatabaseManager(this.dbPath);
+    this.databaseManager = new DatabaseManager();
     this.epicGamesService = new EpicGamesService();
     this.diagnosticsService = new DiagnosticsService(this.databaseManager, this.epicGamesService);
 
@@ -86,8 +85,9 @@ class EpicGamesBot {
 
   setupWebhookServer() {
     const PORT = process.env.PORT || 3000;
+    const BACKUP_KEY = process.env.BACKUP_KEY || 'change-me-in-production';
 
-    const server = http.createServer((req, res) => {
+    const server = http.createServer(async (req, res) => {
       // Health check endpoint
       if (req.method === 'GET' && req.url === '/health') {
         res.writeHead(200, { 'Content-Type': 'application/json' });
@@ -96,6 +96,43 @@ class EpicGamesBot {
           timestamp: new Date().toISOString(),
           mode: 'webhook'
         }));
+        return;
+      }
+
+      // Backup database endpoint (protetto da chiave)
+      // Per PostgreSQL: esporta i dati in formato JSON
+      if (req.method === 'GET' && req.url.startsWith('/backup/db')) {
+        const url = new URL(req.url, `http://${req.headers.host}`);
+        const key = url.searchParams.get('key');
+
+        if (key === BACKUP_KEY) {
+          try {
+            const users = await this.databaseManager.getAllUsers();
+            const games = await this.databaseManager.getNotifiedGames();
+            const backupData = {
+              timestamp: new Date().toISOString(),
+              users: users,
+              notifiedGames: games
+            };
+            const json = JSON.stringify(backupData, null, 2);
+            const fileName = `bot-backup-${Date.now()}.json`;
+
+            res.writeHead(200, {
+              'Content-Type': 'application/json',
+              'Content-Disposition': `attachment; filename="${fileName}"`,
+              'Content-Length': Buffer.byteLength(json)
+            });
+
+            res.end(json);
+            console.log(`📦 Database esportato: ${fileName}`);
+          } catch (error) {
+            res.writeHead(500, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'Backup failed', details: error.message }));
+          }
+        } else {
+          res.writeHead(401, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'Unauthorized' }));
+        }
         return;
       }
 
@@ -190,10 +227,123 @@ class EpicGamesBot {
 
   start() {
     console.log('🚀 Bot Epic Games avviato e in ascolto...');
+    this.setupConsoleCommands();
+  }
+
+  setupConsoleCommands() {
+    console.log('💻 Console comandi attiva. Digita "help" per la lista dei comandi.');
+
+    process.stdin.setEncoding('utf8');
+    process.stdin.on('data', async (data) => {
+      const command = data.toString().trim().toLowerCase();
+
+      switch (command) {
+        case 'help':
+          console.log(`
+📋 Comandi disponibili:
+  help      - Mostra questa lista
+  status    - Stato del bot e statistiche
+  users     - Lista degli utenti iscritti
+  games     - Lista dei giochi notificati
+  check     - Esegui controllo immediato dei giochi
+  notify    - Invia notifica di test agli utenti
+  diag      - Esegui diagnostica
+  stop      - Arresta il bot
+          `);
+          break;
+
+        case 'status':
+          console.log('📊 Stato del bot:');
+          console.log(`  - Modalità: ${this.useWebhook ? 'Webhook' : 'Polling'}`);
+          console.log(`  - Scheduler: ${this.checkSchedule}`);
+          try {
+            const users = await this.databaseManager.getAllUsers();
+            const subscribed = users.filter(u => u.subscribed).length;
+            console.log(`  - Utenti totali: ${users.length}`);
+            console.log(`  - Utenti iscritti: ${subscribed}`);
+          } catch (e) {
+            console.log('  - Errore nel recupero utenti:', e.message);
+          }
+          break;
+
+        case 'users':
+          try {
+            const users = await this.databaseManager.getAllUsers();
+            console.log(`\n👥 Utenti registrati (${users.length}):`);
+            users.forEach(u => {
+              console.log(`  - ${u.firstName || u.username || 'Unknown'} (ID: ${u.telegramId}, Iscritto: ${u.subscribed})`);
+            });
+          } catch (e) {
+            console.error('❌ Errore:', e.message);
+          }
+          break;
+
+        case 'games':
+          try {
+            const games = await this.databaseManager.getNotifiedGames();
+            console.log(`\n🎮 Giochi notificati (${games.length}):`);
+            games.forEach(g => {
+              console.log(`  - ${g.title} (ID: ${g.id})`);
+            });
+          } catch (e) {
+            console.error('❌ Errore:', e.message);
+          }
+          break;
+
+        case 'check':
+          console.log('🔍 Avvio controllo manuale...');
+          await this.checkAndNotifyFreeGames();
+          break;
+
+        case 'notify':
+          console.log('📧 Invio notifica di test...');
+          try {
+            const testGames = [{
+              id: 'test-game',
+              title: '🧪 Gioco di Test',
+              description: 'Questa è una notifica di prova',
+              url: 'https://store.epicgames.com'
+            }];
+            await this.notifyAllUsers(testGames);
+          } catch (e) {
+            console.error('❌ Errore:', e.message);
+          }
+          break;
+
+        case 'diag':
+          console.log('🔧 Esecuzione diagnostica...');
+          try {
+            const report = await this.diagnosticsService.runDiagnostics();
+            console.log('\n📊 Report Diagnostica:');
+            console.log(`  Database: ${report.database.status}`);
+            console.log(`  Epic Games API: ${report.epicGames.status}`);
+            console.log(`  Timestamp: ${report.timestamp}`);
+          } catch (e) {
+            console.error('❌ Errore:', e.message);
+          }
+          break;
+
+        case 'stop':
+          console.log('🛑 Arresto del bot...');
+          await this.stop();
+          process.exit(0);
+          break;
+
+        case '':
+          break;
+
+        default:
+          console.log(`❓ Comando sconosciuto: "${command}". Digita "help" per la lista.`);
+      }
+
+      process.stdout.write('> ');
+    });
+
+    process.stdout.write('> ');
   }
 
   async stop() {
-    console.log('🛑 Arresto del bot...');
+    console.log('� Arresto del bot...');
     await this.databaseManager.close();
     if (this.bot && this.bot.polling) {
       this.bot.stopPolling();

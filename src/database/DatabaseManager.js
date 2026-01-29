@@ -1,74 +1,70 @@
 /**
- * Gestione del database SQLite
- * Responsabile di tutte le operazioni CRUD su utenti e giochi notificati
+ * PostgreSQL database management with Prisma
+ * Handles all CRUD operations on users and notified games
  */
 
-const sqlite3 = require('sqlite3');
-const path = require('path');
+const { PrismaClient } = require('@prisma/client');
+const { PrismaPg } = require('@prisma/adapter-pg');
+const { Pool } = require('pg');
 
 class DatabaseManager {
-  constructor(dbPath = './bot.db') {
-    this.dbPath = dbPath;
-    this.db = null;
+  constructor() {
+    const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+    const adapter = new PrismaPg(pool);
+    this.prisma = new PrismaClient({ adapter });
+    this.dbPath = 'PostgreSQL';
   }
 
   /**
-   * Inizializza il database e crea le tabelle se non esistono
+   * Inizializza la connessione al database
    */
   async init() {
-    return new Promise((resolve, reject) => {
-      this.db = new sqlite3.Database(this.dbPath, (err) => {
-        if (err) {
-          console.error('Errore nell\'apertura del database:', err);
-          reject(err);
-          return;
-        }
-
-        const createTables = `
-          CREATE TABLE IF NOT EXISTS users (
-            id INTEGER PRIMARY KEY,
-            username TEXT,
-            first_name TEXT,
-            chat_id INTEGER UNIQUE,
-            subscribed BOOLEAN DEFAULT 1,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-          );
-
-          CREATE TABLE IF NOT EXISTS notified_games (
-            id TEXT PRIMARY KEY,
-            title TEXT,
-            notified_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            end_date TEXT
-          );
-        `;
-
-        this.db.exec(createTables, (err) => {
-          if (err) {
-            console.error('Errore nella creazione delle tabelle:', err);
-            reject(err);
-          } else {
-            console.log('✅ Database inizializzato');
-            resolve();
-          }
-        });
-      });
-    });
+    try {
+      await this.prisma.$connect();
+      console.log('✅ PostgreSQL connesso');
+    } catch (error) {
+      console.error('❌ Errore nella connessione al database:', error);
+      throw error;
+    }
   }
 
   /**
    * Salva o aggiorna un utente nel database
    */
   async saveUser(user) {
-    if (!this.db) return Promise.resolve();
+    await this.prisma.user.upsert({
+      where: { telegramId: user.id },
+      update: {
+        username: user.username,
+        firstName: user.first_name
+      },
+      create: {
+        telegramId: user.id,
+        chatId: user.id,
+        username: user.username,
+        firstName: user.first_name,
+        isGroup: false
+      }
+    });
+  }
 
-    return new Promise((resolve, reject) => {
-      this.db.run(`
-        INSERT OR REPLACE INTO users (id, username, first_name, chat_id)
-        VALUES (?, ?, ?, ?)
-      `, [user.id, user.username, user.first_name, user.id], (err) => {
-        if (err) reject(err);
-        else resolve();
-      });
+  /**
+   * Salva o aggiorna una chat di gruppo nel database
+   */
+  async saveGroup(chat, username = null) {
+    await this.prisma.user.upsert({
+      where: { telegramId: chat.id },
+      update: {
+        firstName: chat.title,
+        username: username
+      },
+      create: {
+        telegramId: chat.id,
+        chatId: chat.id,
+        username: username,
+        firstName: chat.title,
+        isGroup: true
+      }
     });
   }
 
@@ -76,15 +72,9 @@ class DatabaseManager {
    * Aggiorna lo stato di sottoscrizione di un utente
    */
   async updateSubscription(userId, subscribed) {
-    if (!this.db) return Promise.resolve();
-
-    return new Promise((resolve, reject) => {
-      this.db.run(`
-        UPDATE users SET subscribed = ? WHERE id = ?
-      `, [subscribed ? 1 : 0, userId], (err) => {
-        if (err) reject(err);
-        else resolve();
-      });
+    await this.prisma.user.update({
+      where: { telegramId: userId },
+      data: { subscribed }
     });
   }
 
@@ -92,15 +82,8 @@ class DatabaseManager {
    * Ottiene tutti gli utenti iscritti alle notifiche
    */
   async getSubscribedUsers() {
-    if (!this.db) return Promise.resolve([]);
-
-    return new Promise((resolve, reject) => {
-      this.db.all(`
-        SELECT * FROM users WHERE subscribed = 1
-      `, (err, rows) => {
-        if (err) reject(err);
-        else resolve(rows);
-      });
+    return await this.prisma.user.findMany({
+      where: { subscribed: true }
     });
   }
 
@@ -108,15 +91,8 @@ class DatabaseManager {
    * Ottiene tutti gli utenti (per diagnostica)
    */
   async getAllUsers() {
-    if (!this.db) return Promise.resolve([]);
-
-    return new Promise((resolve, reject) => {
-      this.db.all(`
-        SELECT * FROM users ORDER BY created_at DESC
-      `, (err, rows) => {
-        if (err) reject(err);
-        else resolve(rows);
-      });
+    return await this.prisma.user.findMany({
+      orderBy: { createdAt: 'desc' }
     });
   }
 
@@ -124,34 +100,22 @@ class DatabaseManager {
    * Verifica se un gioco è già stato notificato
    */
   async wasNotified(gameId) {
-    if (!this.db) return Promise.resolve(false);
-
-    return new Promise((resolve, reject) => {
-      this.db.get(`
-        SELECT id FROM notified_games WHERE id = ?
-      `, [gameId], (err, row) => {
-        if (err) reject(err);
-        else resolve(!!row);
-      });
+    const game = await this.prisma.notifiedGame.findUnique({
+      where: { id: gameId }
     });
+    return !!game;
   }
 
   /**
    * Segna un gioco come notificato
    */
   async markAsNotified(game) {
-    if (!this.db) return Promise.resolve();
+    const endDate = this.getPromotionEndDate(game);
 
-    return new Promise((resolve, reject) => {
-      const endDate = this.getPromotionEndDate(game);
-      
-      this.db.run(`
-        INSERT OR REPLACE INTO notified_games (id, title, end_date)
-        VALUES (?, ?, ?)
-      `, [game.id, game.title, endDate], (err) => {
-        if (err) reject(err);
-        else resolve();
-      });
+    await this.prisma.notifiedGame.upsert({
+      where: { id: game.id },
+      update: { title: game.title, endDate },
+      create: { id: game.id, title: game.title, endDate }
     });
   }
 
@@ -159,15 +123,8 @@ class DatabaseManager {
    * Ottiene tutti i giochi notificati (per diagnostica)
    */
   async getNotifiedGames() {
-    if (!this.db) return Promise.resolve([]);
-
-    return new Promise((resolve, reject) => {
-      this.db.all(`
-        SELECT * FROM notified_games ORDER BY notified_at DESC
-      `, (err, rows) => {
-        if (err) reject(err);
-        else resolve(rows);
-      });
+    return await this.prisma.notifiedGame.findMany({
+      orderBy: { notifiedAt: 'desc' }
     });
   }
 
@@ -198,18 +155,8 @@ class DatabaseManager {
    * Chiude la connessione al database
    */
   async close() {
-    if (this.db) {
-      return new Promise((resolve) => {
-        this.db.close((err) => {
-          if (err) {
-            console.error('Errore nel chiudere il database:', err);
-          } else {
-            console.log('✅ Database chiuso');
-          }
-          resolve();
-        });
-      });
-    }
+    await this.prisma.$disconnect();
+    console.log('✅ Database disconnesso');
   }
 }
 

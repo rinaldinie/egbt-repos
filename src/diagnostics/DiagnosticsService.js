@@ -49,16 +49,11 @@ class DiagnosticsService {
   async sendDiagnosticsMessage(bot, chatId, diagnostics) {
     const { users, games, database } = diagnostics;
 
-    // Pulisci e sanitizza il testo per evitare errori di parsing
-    const sanitizeText = (text) => {
+    // Funzione per eseguire l'escape dei caratteri speciali Markdown
+    const escapeMarkdown = (text) => {
+      if (!text) return '';
       return text
-        .replace(/[^\x00-\x7F]/g, '') // Rimuovi caratteri non-ASCII
-        //.replace(/[\u{1F600}-\u{1F64F}]/g, '') // Rimuovi emoji problematiche
-        .replace(/[\u{1F300}-\u{1F5FF}]/gu, '') // Rimuovi simboli problematici
-        .replace(/[\u{1F680}-\u{1F6FF}]/gu, '') // Rimuovi simboli tecnici problematici
-        .replace(/[\u{2600}-\u{26FF}]/gu, '') // Rimuovi simboli misc problematici
-        .replace(/[\u{2700}-\u{27BF}]/gu, '') // Rimuovi simboli dingbats problematici
-        .trim();
+        .replace(/[_*\[\]()~`>#+\-=|{}.!]/g, '\\$&');
     };
 
     // Messaggio introduttivo
@@ -71,9 +66,7 @@ class DiagnosticsService {
     introMessage += `🆓 Giochi gratuiti attuali: ${games.currentlyFree}\n`;
 
     console.log(introMessage);
-    await bot.sendMessage(chatId, sanitizeText(introMessage), {
-      parse_mode: 'markdown'
-    });
+    await bot.sendMessage(chatId, introMessage, { parse_mode: 'Markdown' });
 
     // Lista utenti iscritti
     if (users.subscribed > 0) {
@@ -83,9 +76,9 @@ class DiagnosticsService {
         .filter(user => user.subscribed === 1)
         .slice(0, 10) // Limita a 10 per evitare messaggi troppo lunghi
         .forEach((user, index) => {
-          const displayName = user.username || user.first_name || `Utente ${user.id}`;
-          const joinDate = new Date(user.created_at).toLocaleDateString('it-IT');
-          usersMessage += `${index + 1}. ${displayName} (ID: ${user.chat_id})\n`;
+          const displayName = user.username || user.firstName || `Utente ${user.id}`;
+          const joinDate = new Date(user.createdAt).toLocaleDateString('it-IT');
+          usersMessage += `${index + 1}. ${escapeMarkdown(displayName)} (ID: ${user.chatId})\n`;
           usersMessage += `   📅 Iscritto il: ${joinDate}\n\n`;
         });
 
@@ -94,9 +87,7 @@ class DiagnosticsService {
       }
 
       console.log(usersMessage);
-      await bot.sendMessage(chatId, sanitizeText(usersMessage), {
-        parse_mode: 'markdown'
-      });
+      await bot.sendMessage(chatId, usersMessage, { parse_mode: 'Markdown' });
     }
 
     // Lista giochi notificati
@@ -106,11 +97,11 @@ class DiagnosticsService {
       games.notifiedList
         .slice(0, 10) // Limita a 10 per evitare messaggi troppo lunghi
         .forEach((game, index) => {
-          const notifiedDate = new Date(game.notified_at).toLocaleDateString('it-IT');
-          gamesMessage += `${index + 1}. *${game.title}*\n`;
+          const notifiedDate = new Date(game.notifiedAt).toLocaleDateString('it-IT');
+          gamesMessage += `${index + 1}. ${escapeMarkdown(game.title)}\n`;
           gamesMessage += `   📅 Notificato il: ${notifiedDate}\n`;
-          if (game.end_date) {
-            gamesMessage += `   ⏰ Scadeva il: ${new Date(game.end_date).toLocaleDateString('it-IT')}\n`;
+          if (game.endDate) {
+            gamesMessage += `   ⏰ Scadeva il: ${new Date(game.endDate).toLocaleDateString('it-IT')}\n`;
           }
           gamesMessage += `   🆔 ID: ${game.id}\n\n`;
         });
@@ -120,9 +111,7 @@ class DiagnosticsService {
       }
 
       console.log(gamesMessage);
-      await bot.sendMessage(chatId, sanitizeText(gamesMessage), {
-        parse_mode: 'markdown'
-      });
+      await bot.sendMessage(chatId, gamesMessage, { parse_mode: 'Markdown' });
     }
 
     // Informazioni database
@@ -132,16 +121,13 @@ class DiagnosticsService {
     dbMessage += `📊 Ultimo aggiornamento: ${new Date().toLocaleString('it-IT')}`;
 
     console.log(dbMessage);
-    // await bot.sendMessage(chatId, sanitizeText(dbMessage), {
-    //   parse_mode: 'markdown'
-    // });
 
     // Giochi gratuiti attuali
     if (games.currentlyFree > 0) {
       let currentGamesMessage = `🆓 *Giochi Gratuiti Attuali (${games.currentlyFree}):*\n\n`;
 
       games.currentFreeList.forEach((game, index) => {
-        currentGamesMessage += `${index + 1}. *${game.title}*\n`;
+        currentGamesMessage += `${index + 1}. ${escapeMarkdown(game.title)}\n`;
         const endDate = this.epicGames.getPromotionEndDate(game);
         if (endDate) {
           currentGamesMessage += `   ⏰ Disponibile fino al: ${new Date(endDate).toLocaleDateString('it-IT')}\n`;
@@ -149,9 +135,7 @@ class DiagnosticsService {
         currentGamesMessage += `   🆔 ID: ${game.id}\n\n`;
       });
 
-      await bot.sendMessage(chatId, sanitizeText(currentGamesMessage), {
-        parse_mode: 'HTML'
-      });
+      await bot.sendMessage(chatId, currentGamesMessage, { parse_mode: 'Markdown' });
     }
   }
 
