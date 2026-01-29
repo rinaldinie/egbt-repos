@@ -16,15 +16,62 @@ class DatabaseManager {
   }
 
   /**
-   * Inizializza la connessione al database
+   * Inizializza la connessione al database e crea le tabelle se non esistono
    */
   async init() {
     try {
       await this.prisma.$connect();
       console.log('✅ PostgreSQL connesso');
+
+      // Verifica e crea tabelle se necessario
+      await this.createTablesIfNotExist();
     } catch (error) {
       console.error('❌ Errore nella connessione al database:', error);
       throw error;
+    }
+  }
+
+  /**
+   * Crea le tabelle del database se non esistono
+   */
+  async createTablesIfNotExist() {
+    try {
+      // Verifica se la tabella users esiste
+      await this.prisma.$queryRaw`SELECT 1 FROM users LIMIT 1`;
+      console.log('✅ Tabelle database verificate');
+    } catch (error) {
+      console.log('🔄 Tabelle non trovate, creazione in corso...');
+
+      try {
+        // Crea la tabella users
+        await this.prisma.$executeRaw`
+          CREATE TABLE IF NOT EXISTS users (
+            id SERIAL PRIMARY KEY,
+            telegramId INTEGER UNIQUE NOT NULL,
+            username VARCHAR(255),
+            firstName VARCHAR(255),
+            chatId INTEGER UNIQUE NOT NULL,
+            subscribed BOOLEAN DEFAULT true,
+            createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            isGroup BOOLEAN DEFAULT false
+          )
+        `;
+
+        // Crea la tabella notified_games
+        await this.prisma.$executeRaw`
+          CREATE TABLE IF NOT EXISTS notified_games (
+            id VARCHAR(255) PRIMARY KEY,
+            title VARCHAR(255) NOT NULL,
+            notifiedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            endDate VARCHAR(255)
+          )
+        `;
+
+        console.log('✅ Tabelle create con successo');
+      } catch (createError) {
+        console.error('❌ Errore nella creazione delle tabelle:', createError);
+        throw createError;
+      }
     }
   }
 
