@@ -34,13 +34,59 @@ class DiagnosticsService {
         },
         database: {
           path: this.db.dbPath,
-          tables: ['users', 'notified_games']
-        }
+          tables: ['users', 'notified_games'],
+          status: 'ok'
+        },
+        epicGames: {
+          status: 'ok'
+        },
+        timestamp: new Date().toISOString()
       };
     } catch (error) {
       console.error('Errore nel ottenere le diagnostiche:', error);
       throw error;
     }
+  }
+
+  /**
+   * Esegui diagnostica e restituisci risultato con status
+   */
+  async runDiagnostics() {
+    const result = {
+      database: { status: 'unknown' },
+      epicGames: { status: 'unknown' },
+      users: {},
+      games: {},
+      timestamp: new Date().toISOString()
+    };
+
+    // Test database
+    try {
+      const allUsers = await this.db.getAllUsers();
+      const subscribedUsers = await this.db.getSubscribedUsers();
+      const notifiedGames = await this.db.getNotifiedGames();
+
+      result.database.status = 'ok';
+      result.users.total = allUsers.length;
+      result.users.subscribed = subscribedUsers.length;
+      result.users.unsubscribed = allUsers.length - subscribedUsers.length;
+      result.games.notified = notifiedGames.length;
+    } catch (error) {
+      result.database.status = 'error';
+      result.database.error = error.message;
+    }
+
+    // Test Epic Games API
+    try {
+      const currentFreeGames = await this.epicGames.getFreeGames();
+      result.epicGames.status = 'ok';
+      result.games.currentlyFree = currentFreeGames.length;
+    } catch (error) {
+      result.epicGames.status = 'error';
+      result.epicGames.error = error.message;
+    }
+
+    return result;
   }
 
   /**
@@ -159,16 +205,19 @@ class DiagnosticsService {
     console.log(`🗃️ Tabelle: ${database.tables.join(', ')}`);
     console.log(`📊 Ultimo aggiornamento: ${new Date().toLocaleString('it-IT')}`);
 
-    if (users.subscribed > 0) {
-      console.log('\n👥 UTENTI ISCRITTI:');
-      users.list
-        .filter(user => user.subscribed === 1)
-        .forEach((user, index) => {
-          const displayName = user.username || user.first_name || `Utente ${user.id}`;
-          const joinDate = new Date(user.created_at).toLocaleDateString('it-IT');
-          console.log(`${index + 1}. ${displayName} (ID: ${user.chat_id})`);
-          console.log(`   📅 Iscritto il: ${joinDate}`);
-        });
+    if (users.list && users.list.length > 0) {
+      console.log('\n👥 TUTTI GLI UTENTI:');
+      users.list.forEach((user, index) => {
+        const displayName = user.username || user.firstName || `Utente ${user.id}`;
+        const joinDate = new Date(user.createdAt).toLocaleDateString('it-IT');
+        const status = user.subscribed ? '✅' : '❌';
+        const type = user.isGroup ? '[GRUPPO]' : '[UTENTE]';
+        console.log(`${index + 1}. ${status} ${type} ${displayName} (ID: ${user.telegramId})`);
+        console.log(`   📅 Iscritto il: ${joinDate}`);
+        console.log(`   💬 Chat ID: ${user.chatId}`);
+      });
+    } else {
+      console.log('\n👥 Nessun utente registrato');
     }
 
     if (games.notified > 0) {

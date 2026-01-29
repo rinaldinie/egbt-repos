@@ -192,6 +192,20 @@ class EpicGamesBot {
         return;
       }
 
+      // API endpoint per eseguire printDiagnostics
+      if (req.method === 'GET' && req.url === '/api/diagnostics/print') {
+        try {
+          const diagnostics = await this.diagnosticsService.getDiagnostics();
+          this.diagnosticsService.printDiagnostics(diagnostics);
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ message: 'Diagnostica stampata nella console' }));
+        } catch (error) {
+          res.writeHead(500, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: error.message }));
+        }
+        return;
+      }
+
       // 404 per altre rotte
       res.writeHead(404);
       res.end('Not Found');

@@ -205,6 +205,35 @@
             background: #e94560;
             display: block;
         }
+
+        .diagnostics-result {
+            background: #0f3460;
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 15px;
+            max-height: 400px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 0.85em;
+            white-space: pre-wrap;
+            display: none;
+        }
+
+        .diagnostics-result.show {
+            display: block;
+        }
+
+        .diagnostics-result .ok {
+            color: #48bb78;
+        }
+
+        .diagnostics-result .error {
+            color: #e94560;
+        }
+
+        .diagnostics-result .warning {
+            color: #f39c12;
+        }
     </style>
 </head>
 
@@ -306,7 +335,13 @@
             </div>
 
             <div class="card">
-                <h2>📋 Istruzioni</h2>
+                <h2>🔧 Diagnostica</h2>
+                <button id="runDiagnostics" class="btn btn-secondary">Esegui Diagnostica</button>
+                <div id="diagnosticsResult" class="diagnostics-result"></div>
+            </div>
+
+            <div class="card">
+                <h2>� Istruzioni</h2>
                 <div style="color: #a0aec0; line-height: 1.6;">
                     <p><strong>Per aggiungere un utente:</strong></p>
                     <ul style="margin-left: 20px; margin-bottom: 15px;">
@@ -332,6 +367,33 @@
     </div>
 
     <script>
+        document.getElementById('runDiagnostics').addEventListener('click', async () => {
+            const resultEl = document.getElementById('diagnosticsResult');
+            const btn = document.getElementById('runDiagnostics');
+
+            btn.textContent = '⏳ Esecuzione...';
+            btn.disabled = true;
+            resultEl.classList.remove('show');
+
+            try {
+                const response = await fetch('/api/diagnostics/print');
+                const result = await response.json();
+
+                if (response.ok) {
+                    resultEl.innerHTML = `<span class="ok">✅ ${result.message}</span><br><span style="color: #a0aec0;">Controlla la console del server per i dettagli</span>`;
+                } else {
+                    resultEl.innerHTML = `<span class="error">❌ ${result.error || 'Errore'}</span>`;
+                }
+                resultEl.classList.add('show');
+            } catch (error) {
+                resultEl.innerHTML = `<span class="error">❌ Errore: ${error.message}</span>`;
+                resultEl.classList.add('show');
+            } finally {
+                btn.textContent = 'Esegui Diagnostica';
+                btn.disabled = false;
+            }
+        });
+
         document.getElementById('addUserForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const form = e.target;
