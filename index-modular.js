@@ -192,6 +192,26 @@ class EpicGamesBot {
         return;
       }
 
+      // API endpoint per aggiungere giochi notificati
+      if (req.method === 'POST' && req.url === '/api/games') {
+        let body = '';
+        req.on('data', chunk => {
+          body += chunk.toString();
+        });
+        req.on('end', async () => {
+          try {
+            const data = JSON.parse(body);
+            await this.databaseManager.saveNotifiedGameFromDashboard(data);
+            res.writeHead(201, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ message: 'Gioco aggiunto con successo' }));
+          } catch (error) {
+            res.writeHead(500, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: error.message }));
+          }
+        });
+        return;
+      }
+
       // API endpoint per eseguire printDiagnostics
       if (req.method === 'GET' && req.url === '/api/diagnostics/print') {
         try {

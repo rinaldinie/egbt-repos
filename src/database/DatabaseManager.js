@@ -200,6 +200,30 @@ class DatabaseManager {
   }
 
   /**
+   * Salva un gioco notificato dalla dashboard
+   * @param {Object} data - Dati del gioco { id, title, endDate, notifiedAt }
+   */
+  async saveNotifiedGameFromDashboard(data) {
+    // Se notifiedAt non è fornito, usa la data corrente
+    const notifiedAt = data.notifiedAt ? new Date(data.notifiedAt) : new Date();
+
+    await this.prisma.notifiedGame.upsert({
+      where: { id: data.id },
+      update: {
+        title: data.title,
+        endDate: data.endDate || null,
+        notifiedAt: notifiedAt
+      },
+      create: {
+        id: data.id,
+        title: data.title,
+        endDate: data.endDate || null,
+        notifiedAt: notifiedAt
+      }
+    });
+  }
+
+  /**
    * Estrae la data di fine promozione da un gioco
    */
   getPromotionEndDate(game) {
