@@ -8,24 +8,12 @@
   },
   "scripts": {
     "postinstall": "prisma generate",
-    "start": "node index-webhook.js",
-    "start:modular": "node index-modular.js",
+    "start": "node index-modular.js",
     "test": "node test-api.js",
-    "test:modular": "node test-api-modular.js",
-    "test:diagnostics": "node test-diagnostics.js",
-    "test:diagnostics:modular": "node test-diagnostics-modular.js",
-    "setup:test-db": "node setup-test-db.js",
-    "setup:test-db:modular": "node setup-test-db-modular.js",
-    "demo:message": "node demo-message.js",
-    "demo:diagnostics": "node demo-diagnostics.js",
-    "demo:security": "node demo-security.js",
-    "find:user-id": "node find-user-id.js",
-    "find:user-id:modular": "node find-user-id-modular.js",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio",
-    "prisma:reset": "prisma migrate reset",
-    "db:seed": "node scripts/seed.js"
+    "prisma:reset": "prisma migrate reset"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.3.0",
