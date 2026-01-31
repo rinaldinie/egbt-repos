@@ -113,11 +113,18 @@ Per domande o problemi, contatta l'amministratore del bot.`;
           await this.db.saveGroup(msg.chat, user.username);
           await this.db.updateSubscription(chatId, true);
           await this.bot.sendMessage(chatId, `✅ Il gruppo "${msg.chat.title}" è ora iscritto alle notifiche!`);
+
+          // Notifica admin
+          await this.notifyAdminSubscription(msg.chat.title || 'Gruppo sconosciuto', chatId, true, true);
         } else {
           // Salva l'utente privato
           await this.db.saveUser(user);
           await this.db.updateSubscription(user.id, true);
           await this.bot.sendMessage(chatId, '✅ Sei ora iscritto alle notifiche dei giochi gratuiti!');
+
+          // Notifica admin
+          const displayName = user.username ? `@${user.username}` : `${user.first_name} ${user.last_name || ''}`.trim();
+          await this.notifyAdminSubscription(displayName, user.id, true, false);
         }
       } catch (error) {
         console.error('Errore nel comando /subscribe:', error);
@@ -143,9 +150,16 @@ Per domande o problemi, contatta l'amministratore del bot.`;
         if (isGroup) {
           await this.db.updateSubscription(chatId, false);
           await this.bot.sendMessage(chatId, `❌ Il gruppo "${msg.chat.title}" è stato disiscritto dalle notifiche.`);
+
+          // Notifica admin
+          await this.notifyAdminSubscription(msg.chat.title || 'Gruppo sconosciuto', chatId, false, true);
         } else {
           await this.db.updateSubscription(user.id, false);
           await this.bot.sendMessage(chatId, '❌ Ti sei disiscritto dalle notifiche. Non riceverai più avvisi sui giochi gratuiti. Usa /subscribe per riattivare le notifiche.');
+
+          // Notifica admin
+          const displayName = user.username ? `@${user.username}` : `${user.first_name} ${user.last_name || ''}`.trim();
+          await this.notifyAdminSubscription(displayName, user.id, false, false);
         }
       } catch (error) {
         console.error('Errore nel comando /unsubscribe:', error);
@@ -334,6 +348,44 @@ Per domande o problemi, contatta l'amministratore del bot.`;
         await this.bot.sendMessage(chatId, '❌ Errore nell\'invio dell\'annuncio: ' + error.message);
       }
     });
+  }
+
+  /**
+   * Invia una notifica all'admin quando un utente si iscrive o disiscrive
+   * @param {string} name - Nome/username dell'utente o gruppo
+   * @param {number} id - ID Telegram dell'utente o gruppo
+   * @param {boolean} isSubscribing - true se si sta iscrivendo, false se disiscrive
+   * @param {boolean} isGroup - true se è un gruppo, false se è un utente privato
+   */
+  async notifyAdminSubscription(name, id, isSubscribing, isGroup) {
+    if (!this.adminId) return;
+
+    try {
+      const action = isSubscribing ? 'iscritto' : 'disiscritto';
+      const emoji = isSubscribing ? '✅' : '❌';
+      const type = isGroup ? 'Gruppo' : 'Utente';
+
+      const message = `${emoji} *${type} ${action}*
+
+👤 *Nome:* ${name}
+🆔 *ID:* ${id}
+📅 *Data:* ${new Date().toLocaleString('it-IT')}`;
+
+      await this.bot.sendMessage(this.adminId, message, {
+        parse_mode: 'Markdown'
+      });
+
+      console.log(`📢 Notifica admin inviata: ${type} ${name} ${action}`);
+    } catch (error) {
+      console.error('❌ Errore nell\'inviare notifica all\'admin:', error);
+    }
+  }
+
+  /**
+   * Verifica se un utente è l'amministratore
+   */
+  isAdmin(userId) {
+    return this.adminId && userId === this.adminId;
   }
 }
 
