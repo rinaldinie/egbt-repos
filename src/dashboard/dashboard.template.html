@@ -166,6 +166,37 @@
             border-color: #f39c12;
         }
 
+        .form-group textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #2d3748;
+            border-radius: 6px;
+            background: #0f3460;
+            color: #fff;
+            font-size: 0.9em;
+            font-family: monospace;
+            resize: vertical;
+            min-height: 200px;
+        }
+
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #f39c12;
+        }
+
+        .json-example {
+            background: #0f3460;
+            padding: 10px;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 0.8em;
+            color: #a0aec0;
+            margin-top: 10px;
+            white-space: pre-wrap;
+            max-height: 150px;
+            overflow-y: auto;
+        }
+
         .btn {
             background: #48bb78;
             color: #fff;
@@ -335,26 +366,25 @@
             </div>
 
             <div class="card">
-                <h2>🎮 Aggiungi Gioco Notificato</h2>
+                <h2>🎮 Importa Giochi da JSON</h2>
                 <div id="gameMessage" class="message"></div>
                 <form id="addGameForm">
                     <div class="form-group">
-                        <label>ID Gioco *</label>
-                        <input type="text" name="gameId" required placeholder="es: fortnite-123">
+                        <label>JSON Giochi *</label>
+                        <textarea name="gamesJson" required
+                            placeholder="Incolla qui il JSON con i giochi..."></textarea>
+                        <div class="json-example">Formato atteso (array di oggetti):
+                            [
+                            {
+                            "title": "Nome Gioco",
+                            "notifiedAt": "28/12/2025",
+                            "endDate": "29/12/2025",
+                            "id": "game-id-123",
+                            "url": "https://www.epicgames.com/store/it-IT/p/game"
+                            }
+                            ]</div>
                     </div>
-                    <div class="form-group">
-                        <label>Titolo *</label>
-                        <input type="text" name="title" required placeholder="es: Fortnite">
-                    </div>
-                    <div class="form-group">
-                        <label>Data notifica</label>
-                        <input type="datetime-local" name="notifiedAt">
-                    </div>
-                    <div class="form-group">
-                        <label>Data fine promozione (opzionale)</label>
-                        <input type="datetime-local" name="endDate">
-                    </div>
-                    <button type="submit" class="btn">Aggiungi Gioco</button>
+                    <button type="submit" class="btn">Importa Giochi</button>
                 </form>
             </div>
 
@@ -460,43 +490,50 @@
             e.preventDefault();
             const form = e.target;
             const formData = new FormData(form);
-
-            // Gestione data notifica: se non specificata, usa la data corrente
-            let notifiedAt = formData.get('notifiedAt');
-            if (notifiedAt) {
-                notifiedAt = new Date(notifiedAt).toISOString();
-            } else {
-                notifiedAt = new Date().toISOString();
-            }
-
-            // Gestione data fine promozione: converti da datetime-local a ISO string o null
-            let endDate = formData.get('endDate');
-            if (endDate) {
-                endDate = new Date(endDate).toISOString();
-            } else {
-                endDate = null;
-            }
-
-            const data = {
-                id: formData.get('gameId'),
-                title: formData.get('title'),
-                notifiedAt: notifiedAt,
-                endDate: endDate
-            };
-
             const messageEl = document.getElementById('gameMessage');
 
             try {
+                // Parsing del JSON inserito
+                const jsonText = formData.get('gamesJson');
+                let gamesData;
+
+                try {
+                    gamesData = JSON.parse(jsonText);
+                } catch (parseError) {
+                    messageEl.textContent = '❌ JSON non valido: ' + parseError.message;
+                    messageEl.className = 'message error';
+                    return;
+                }
+
+                // Normalizza in array se è un singolo oggetto
+                const gamesArray = Array.isArray(gamesData) ? gamesData : [gamesData];
+
+                if (gamesArray.length === 0) {
+                    messageEl.textContent = '❌ Nessun gioco trovato nel JSON';
+                    messageEl.className = 'message error';
+                    return;
+                }
+
+                // Validazione base
+                for (let i = 0; i < gamesArray.length; i++) {
+                    const game = gamesArray[i];
+                    if (!game.id || !game.title) {
+                        messageEl.textContent = `❌ Gioco ${i + 1}: manca id o title`;
+                        messageEl.className = 'message error';
+                        return;
+                    }
+                }
+
                 const response = await fetch('/api/games', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(data)
+                    body: JSON.stringify({ games: gamesArray })
                 });
 
                 const result = await response.json();
 
                 if (response.ok) {
-                    messageEl.textContent = '✅ ' + result.message;
+                    messageEl.textContent = `✅ ${result.message}`;
                     messageEl.className = 'message success';
                     form.reset();
                     setTimeout(() => location.reload(), 1500);
@@ -505,7 +542,7 @@
                     messageEl.className = 'message error';
                 }
             } catch (error) {
-                messageEl.textContent = '❌ Errore di connessione';
+                messageEl.textContent = '❌ Errore di connessione: ' + error.message;
                 messageEl.className = 'message error';
             }
         });

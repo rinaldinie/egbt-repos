@@ -192,7 +192,7 @@ class EpicGamesBot {
         return;
       }
 
-      // API endpoint per aggiungere giochi notificati
+      // API endpoint per aggiungere giochi notificati (supporta array di giochi)
       if (req.method === 'POST' && req.url === '/api/games') {
         let body = '';
         req.on('data', chunk => {
@@ -201,9 +201,36 @@ class EpicGamesBot {
         req.on('end', async () => {
           try {
             const data = JSON.parse(body);
-            await this.databaseManager.saveNotifiedGameFromDashboard(data);
+
+            // Supporta sia un singolo gioco che un array di giochi
+            const games = data.games || [data];
+            const results = { success: [], errors: [] };
+
+            for (const game of games) {
+              try {
+                await this.databaseManager.saveNotifiedGameFromDashboard(game);
+                results.success.push(game.title || game.id);
+              } catch (gameError) {
+                results.errors.push({ game: game.title || game.id, error: gameError.message });
+              }
+            }
+
+            const totalProcessed = results.success.length + results.errors.length;
+            let message;
+
+            if (results.errors.length === 0) {
+              message = `${results.success.length} gioco/i importato/i con successo`;
+            } else if (results.success.length === 0) {
+              message = `Nessun gioco importato. Errori: ${results.errors.map(e => e.error).join(', ')}`;
+              res.writeHead(400, { 'Content-Type': 'application/json' });
+              res.end(JSON.stringify({ error: message, details: results.errors }));
+              return;
+            } else {
+              message = `${results.success.length} gioco/i importato/i, ${results.errors.length} errori`;
+            }
+
             res.writeHead(201, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify({ message: 'Gioco aggiunto con successo' }));
+            res.end(JSON.stringify({ message, results }));
           } catch (error) {
             res.writeHead(500, { 'Content-Type': 'application/json' });
             res.end(JSON.stringify({ error: error.message }));

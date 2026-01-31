@@ -48,7 +48,8 @@ class DashboardService {
     // Genera la lista giochi HTML
     const gamesListHtml = games.notifiedList.slice(0, 10).map(g => {
       const date = new Date(g.notifiedAt).toLocaleDateString('it-IT');
-      return `<div class="game-item"><strong>${g.title}</strong><br><span>Notificato: ${date}</span></div>`;
+      const urlLink = g.url ? `<br><a href="${g.url}" target="_blank" style="color: #4299e1; font-size: 0.8em; text-decoration: none;">🔗 Vedi su Epic</a>` : '';
+      return `<div class="game-item"><strong>${g.title}</strong>${urlLink}<br><span>Notificato: ${date}</span></div>`;
     }).join('');
 
     // Sostituisci i placeholder

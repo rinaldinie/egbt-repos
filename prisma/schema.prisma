@@ -27,6 +27,7 @@ model NotifiedGame {
   title      String   @map("title")
   notifiedAt DateTime @default(now()) @map("notifiedat")
   endDate    String?  @map("enddate")
+  url        String?  @map("url")
 
   @@map("notified_games")
 }
