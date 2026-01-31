@@ -317,9 +317,56 @@ class EpicGamesBot {
         // Piccolo delay tra le notifiche per evitare rate limiting
         await new Promise(resolve => setTimeout(resolve, 1000));
       } catch (error) {
-        console.error(`❌ Errore nell'inviare notifica a ${user.id}:`, error);
+        // Se l'utente ha bloccato il bot o cancellato la chat, disiscrivilo automaticamente
+        if (this.isUserBlockedError(error)) {
+          console.log(`🚫 Utente ${user.id} ha bloccato il bot o cancellato la chat. Disiscrizione automatica...`);
+          try {
+            await this.databaseManager.updateSubscription(user.telegramId, false);
+            console.log(`✅ Utente ${user.id} disiscritto automaticamente`);
+          } catch (unsubError) {
+            console.error(`❌ Errore nella disiscrizione automatica di ${user.id}:`, unsubError);
+          }
+        } else {
+          console.error(`❌ Errore nell'inviare notifica a ${user.id}:`, error);
+        }
       }
     }
+  }
+
+  /**
+   * Verifica se l'errore è dovuto al fatto che l'utente ha bloccato il bot
+   */
+  isUserBlockedError(error) {
+    if (!error) return false;
+
+    const errorMessage = error.message || error.description || String(error);
+    const errorCode = error.code || error.statusCode;
+
+    // Codici e messaggi che indicano che l'utente ha bloccato il bot o cancellato la chat
+    const blockedCodes = [403, 400];
+    const blockedMessages = [
+      'bot was blocked by the user',
+      'user is deactivated',
+      'chat not found',
+      'bot was kicked',
+      'user not found',
+      'have no rights to send a message',
+      'not enough rights',
+      'chat not found',
+      'bot was blocked',
+      'blocked',
+      'kicked',
+      'deactivated'
+    ];
+
+    // Verifica il codice errore
+    if (blockedCodes.includes(errorCode)) {
+      return true;
+    }
+
+    // Verifica il messaggio errore (case insensitive)
+    const lowerErrorMessage = errorMessage.toLowerCase();
+    return blockedMessages.some(msg => lowerErrorMessage.includes(msg));
   }
 
   start() {
