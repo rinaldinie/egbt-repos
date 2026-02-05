@@ -271,6 +271,42 @@ class EpicGamesBot {
         return;
       }
 
+      // API endpoint per notificare di nuovo i giochi recenti
+      if (req.method === 'POST' && req.url === '/api/notify-recent') {
+        try {
+          console.log('🔔 Notifica dei giochi recenti richiesta dalla dashboard...');
+
+          // Trova e elimina i giochi con la data più recente
+          const latestGame = await this.databaseManager.findLatestNotifiedGame();
+
+          if (!latestGame) {
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({
+              message: 'Nessun gioco notificato da rinotificare',
+              timestamp: new Date().toISOString()
+            }));
+            return;
+          }
+
+          // Elimina i giochi con quella data
+          const deleted = await this.databaseManager.deleteNotifiedGamesByDate(latestGame.notifiedAt);
+          console.log(`🗑️ Eliminati ${deleted} giochi per rinotifica`);
+
+          // Esegui il controllo e notifica
+          await this.checkAndNotifyFreeGames();
+
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({
+            message: `Eliminati ${deleted} giochi e avviata la notifica`,
+            timestamp: new Date().toISOString()
+          }));
+        } catch (error) {
+          res.writeHead(500, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: error.message }));
+        }
+        return;
+      }
+
       // API endpoint per esportare i giochi notificati in JSON
       if (req.method === 'GET' && req.url === '/api/games/export') {
         try {

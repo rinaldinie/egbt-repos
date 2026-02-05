@@ -393,7 +393,8 @@
                 <p style="color: #a0aec0; margin-bottom: 15px; font-size: 0.9em;">
                     Esporta tutti i giochi notificati in formato JSON.
                 </p>
-                <a href="/api/games/export" class="btn" style="display: block; text-align: center; text-decoration: none;">📥 Scarica JSON</a>
+                <a href="/api/games/export" class="btn"
+                    style="display: block; text-align: center; text-decoration: none;">📥 Scarica JSON</a>
             </div>
 
             <div class="card">
@@ -409,6 +410,15 @@
                 </p>
                 <button id="forceCheckGames" class="btn" style="background: #f39c12;">🎮 Controlla Giochi Ora</button>
                 <div id="checkGamesResult" class="diagnostics-result"></div>
+            </div>
+
+            <div class="card">
+                <h2>🔔 Rinotifica Giochi Recenti</h2>
+                <p style="color: #a0aec0; margin-bottom: 15px; font-size: 0.9em;">
+                    Elimina i giochi notificati più recenti e li rinotifica agli utenti iscritti.
+                </p>
+                <button id="notifyRecentGames" class="btn" style="background: #9f7aea;">🔔 Rinotifica Ora</button>
+                <div id="notifyRecentResult" class="diagnostics-result"></div>
             </div>
 
             <div class="card">
@@ -590,6 +600,35 @@
                 resultEl.classList.add('show');
             } finally {
                 btn.textContent = '🎮 Controlla Giochi Ora';
+                btn.disabled = false;
+            }
+        });
+
+        document.getElementById('notifyRecentGames').addEventListener('click', async () => {
+            const resultEl = document.getElementById('notifyRecentResult');
+            const btn = document.getElementById('notifyRecentGames');
+
+            btn.textContent = '⏳ Rinotifica in corso...';
+            btn.disabled = true;
+            resultEl.classList.remove('show');
+
+            try {
+                const response = await fetch('/api/notify-recent', {
+                    method: 'POST'
+                });
+                const result = await response.json();
+
+                if (response.ok) {
+                    resultEl.innerHTML = `<span class="ok">✅ ${result.message}</span><br><span style="color: #a0aec0;">Timestamp: ${result.timestamp}</span><br><span style="color: #a0aec0;">Controlla i log del server per i dettagli completi</span>`;
+                } else {
+                    resultEl.innerHTML = `<span class="error">❌ ${result.error || 'Errore'}</span>`;
+                }
+                resultEl.classList.add('show');
+            } catch (error) {
+                resultEl.innerHTML = `<span class="error">❌ Errore: ${error.message}</span>`;
+                resultEl.classList.add('show');
+            } finally {
+                btn.textContent = '🔔 Rinotifica Ora';
                 btn.disabled = false;
             }
         });

@@ -322,6 +322,25 @@ class DatabaseManager {
   }
 
   /**
+   * Trova il gioco notificato più recente
+   */
+  async findLatestNotifiedGame() {
+    return await this.prisma.notifiedGame.findFirst({
+      orderBy: { notifiedAt: 'desc' }
+    });
+  }
+
+  /**
+   * Elimina i giochi notificati con una data specifica
+   */
+  async deleteNotifiedGamesByDate(notifiedAt) {
+    const result = await this.prisma.notifiedGame.deleteMany({
+      where: { notifiedAt: notifiedAt }
+    });
+    return result.count;
+  }
+
+  /**
    * Chiude la connessione al database
    */
   async close() {
