@@ -380,13 +380,6 @@ Per domande o problemi, contatta l'amministratore del bot.`;
       console.error('❌ Errore nell\'inviare notifica all\'admin:', error);
     }
   }
-
-  /**
-   * Verifica se un utente è l'amministratore
-   */
-  isAdmin(userId) {
-    return this.adminId && userId === this.adminId;
-  }
 }
 
 module.exports = CommandHandler;

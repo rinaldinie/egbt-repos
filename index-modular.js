@@ -271,6 +271,33 @@ class EpicGamesBot {
         return;
       }
 
+      // API endpoint per esportare i giochi notificati in JSON
+      if (req.method === 'GET' && req.url === '/api/games/export') {
+        try {
+          const games = await this.databaseManager.getNotifiedGames();
+          const exportData = {
+            timestamp: new Date().toISOString(),
+            totalGames: games.length,
+            games: games
+          };
+          const json = JSON.stringify(exportData, null, 2);
+          const fileName = `notified-games-${Date.now()}.json`;
+
+          res.writeHead(200, {
+            'Content-Type': 'application/json',
+            'Content-Disposition': `attachment; filename="${fileName}"`,
+            'Content-Length': Buffer.byteLength(json)
+          });
+
+          res.end(json);
+          console.log(`📦 Giochi notificati esportati: ${games.length} giochi`);
+        } catch (error) {
+          res.writeHead(500, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'Export failed', details: error.message }));
+        }
+        return;
+      }
+
       // 404 per altre rotte
       res.writeHead(404);
       res.end('Not Found');
@@ -340,7 +367,7 @@ class EpicGamesBot {
 
     for (const user of users) {
       try {
-        await this.commandHandler.sendFreeGamesMessage(user.chat_id, freeGames);
+        await this.commandHandler.sendFreeGamesMessage(user.chatId, freeGames);
         console.log(`✅ Notifica inviata a ${user.username || user.first_name} (ID: ${user.id})`);
 
         // Piccolo delay tra le notifiche per evitare rate limiting
