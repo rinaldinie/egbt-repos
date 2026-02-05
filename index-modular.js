@@ -253,6 +253,24 @@ class EpicGamesBot {
         return;
       }
 
+      // API endpoint per forzare il controllo giornaliero dei giochi gratuiti
+      if (req.method === 'POST' && req.url === '/api/check-games') {
+        try {
+          console.log('🔄 Controllo manuale dei giochi gratuiti richiesto dalla dashboard...');
+          // Esegui il controllo in modo asincrono
+          this.checkAndNotifyFreeGames();
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({
+            message: 'Controllo giochi gratuiti avviato! Controlla i log per i dettagli.',
+            timestamp: new Date().toLocaleString('it-IT', { timeZone: process.env.TIMEZONE || 'Europe/Rome' })
+          }));
+        } catch (error) {
+          res.writeHead(500, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: error.message }));
+        }
+        return;
+      }
+
       // 404 per altre rotte
       res.writeHead(404);
       res.end('Not Found');
@@ -268,8 +286,11 @@ class EpicGamesBot {
 
   setupScheduler() {
     // Configura lo scheduler per controllare i giochi gratuiti
+    // Usa il timezone Europe/Rome (CET/CEST) per l'orario italiano
     cron.schedule(this.checkSchedule, () => {
       this.checkAndNotifyFreeGames();
+    }, {
+      timezone: process.env.TIMEZONE || 'Europe/Rome'
     });
 
     // Esegui un controllo immediato all'avvio
@@ -277,18 +298,24 @@ class EpicGamesBot {
       this.checkAndNotifyFreeGames();
     }, 5000);
 
-    console.log(`⏰ Scheduler configurato con orario: ${this.checkSchedule}`);
+    const timezone = process.env.TIMEZONE || 'Europe/Rome';
+    console.log(`⏰ Scheduler configurato con orario: ${this.checkSchedule} (timezone: ${timezone})`);
   }
 
   async checkAndNotifyFreeGames() {
-    console.log('🔍 Controllo giornaliero dei giochi gratuiti...');
+    const now = new Date();
+    const timestamp = now.toLocaleString('it-IT', { timeZone: process.env.TIMEZONE || 'Europe/Rome' });
+    console.log(`🔍 [${timestamp}] Controllo giornaliero dei giochi gratuiti avviato...`);
 
     try {
       const freeGames = await this.epicGamesService.getFreeGames();
+      console.log(`📊 [${timestamp}] Giochi gratuiti trovati dall'API: ${freeGames.length}`);
+
       const newFreeGames = [];
 
       for (const game of freeGames) {
         const wasNotified = await this.databaseManager.wasNotified(game.id);
+        console.log(`   - "${game.title}" (ID: ${game.id}) - Già notificato: ${wasNotified ? 'Sì' : 'No'}`);
         if (!wasNotified) {
           newFreeGames.push(game);
           await this.databaseManager.markAsNotified(game);
@@ -296,13 +323,15 @@ class EpicGamesBot {
       }
 
       if (newFreeGames.length > 0) {
-        console.log(`🎉 Trovati ${newFreeGames.length} nuovi giochi gratuiti!`);
+        console.log(`🎉 [${timestamp}] Trovati ${newFreeGames.length} nuovi giochi gratuiti da notificare!`);
         await this.notifyAllUsers(newFreeGames);
       } else {
-        console.log('ℹ️ Nessun nuovo gioco gratuito trovato.');
+        console.log(`ℹ️ [${timestamp}] Nessun nuovo gioco gratuito da notificare (tutti già notificati).`);
       }
+
+      console.log(`✅ [${timestamp}] Controllo giochi gratuiti completato.`);
     } catch (error) {
-      console.error('❌ Errore durante il controllo dei giochi gratuiti:', error);
+      console.error(`❌ [${timestamp}] Errore durante il controllo dei giochi gratuiti:`, error);
     }
   }
 

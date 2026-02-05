@@ -395,6 +395,15 @@
             </div>
 
             <div class="card">
+                <h2>🔄 Controllo Manuale</h2>
+                <p style="color: #a0aec0; margin-bottom: 15px; font-size: 0.9em;">
+                    Forza il controllo dei giochi gratuiti e invia notifiche per eventuali nuovi giochi.
+                </p>
+                <button id="forceCheckGames" class="btn" style="background: #f39c12;">🎮 Controlla Giochi Ora</button>
+                <div id="checkGamesResult" class="diagnostics-result"></div>
+            </div>
+
+            <div class="card">
                 <h2>� Istruzioni</h2>
                 <div style="color: #a0aec0; line-height: 1.6;">
                     <p><strong>Per aggiungere un utente:</strong></p>
@@ -544,6 +553,36 @@
             } catch (error) {
                 messageEl.textContent = '❌ Errore di connessione: ' + error.message;
                 messageEl.className = 'message error';
+            }
+        });
+
+        // Controllo manuale giochi gratuiti
+        document.getElementById('forceCheckGames').addEventListener('click', async () => {
+            const resultEl = document.getElementById('checkGamesResult');
+            const btn = document.getElementById('forceCheckGames');
+
+            btn.textContent = '⏳ Controllo in corso...';
+            btn.disabled = true;
+            resultEl.classList.remove('show');
+
+            try {
+                const response = await fetch('/api/check-games', {
+                    method: 'POST'
+                });
+                const result = await response.json();
+
+                if (response.ok) {
+                    resultEl.innerHTML = `<span class="ok">✅ ${result.message}</span><br><span style="color: #a0aec0;">Timestamp: ${result.timestamp}</span><br><span style="color: #a0aec0;">Controlla i log del server per i dettagli completi</span>`;
+                } else {
+                    resultEl.innerHTML = `<span class="error">❌ ${result.error || 'Errore'}</span>`;
+                }
+                resultEl.classList.add('show');
+            } catch (error) {
+                resultEl.innerHTML = `<span class="error">❌ Errore: ${error.message}</span>`;
+                resultEl.classList.add('show');
+            } finally {
+                btn.textContent = '🎮 Controlla Giochi Ora';
+                btn.disabled = false;
             }
         });
     </script>
