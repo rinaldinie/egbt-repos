@@ -1,4 +1,18 @@
 ---
+version: "1.3.0"
+date: "2026-01-30"
+---
+
+# 🎮 Aggiornamento Bot Epic Games v1.3.0
+
+## 🐛 Bug Fix
+
+- **Corretto bug nelle notifiche** - Risolto problema per cui le notifiche non venivano inviate agli utenti.
+- **Migliorata logica di notifica** - Ora viene utilizzato il fuso orario corretto per le notifiche.
+
+---
+
+---
 version: "1.2.0"
 date: "2026-01-30"
 ---

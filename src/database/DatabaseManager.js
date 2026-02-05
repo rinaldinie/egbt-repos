@@ -322,21 +322,49 @@ class DatabaseManager {
   }
 
   /**
-   * Trova il gioco notificato più recente
+   * Trova la data più recente di notifica (solo la data, senza ora)
    */
-  async findLatestNotifiedGame() {
-    return await this.prisma.notifiedGame.findFirst({
-      orderBy: { notifiedAt: 'desc' }
+  async findLatestNotifiedDate() {
+    const games = await this.prisma.notifiedGame.findMany({
+      orderBy: { notifiedAt: 'desc' },
+      take: 100
     });
+
+    if (games.length === 0) return null;
+
+    // Trova la data più recente (solo la data, senza ora)
+    const latestDate = new Date(Math.max(...games.map(g => new Date(g.notifiedAt).getTime())));
+    latestDate.setHours(0, 0, 0, 0);
+
+    return latestDate;
   }
 
   /**
-   * Elimina i giochi notificati con una data specifica
+   * Elimina tutti i giochi notificati oggi (stessa data)
    */
-  async deleteNotifiedGamesByDate(notifiedAt) {
+  async deleteTodayNotifiedGames() {
+    const latestDate = await this.findLatestNotifiedDate();
+
+    if (!latestDate) {
+      console.log('ℹ️ Nessun gioco notificato da eliminare');
+      return 0;
+    }
+
+    // Trova l'inizio e fine del giorno più recente
+    const endDate = new Date(latestDate);
+    endDate.setHours(23, 59, 59, 999);
+
+    // Elimina tutti i giochi notificati in quel giorno
     const result = await this.prisma.notifiedGame.deleteMany({
-      where: { notifiedAt: notifiedAt }
+      where: {
+        notifiedAt: {
+          gte: latestDate,
+          lte: endDate
+        }
+      }
     });
+
+    console.log(`✅ Eliminati ${result.count} giochi notificati oggi`);
     return result.count;
   }
 

@@ -271,33 +271,29 @@ class EpicGamesBot {
         return;
       }
 
-      // API endpoint per notificare di nuovo i giochi recenti
+      // API endpoint per rinotificare i giochi di oggi
       if (req.method === 'POST' && req.url === '/api/notify-recent') {
         try {
-          console.log('🔔 Notifica dei giochi recenti richiesta dalla dashboard...');
+          console.log('🔔 Rinotifica dei giochi di oggi richiesta dalla dashboard...');
 
-          // Trova e elimina i giochi con la data più recente
-          const latestGame = await this.databaseManager.findLatestNotifiedGame();
+          // Elimina tutti i giochi notificati oggi (stessa data)
+          const deleted = await this.databaseManager.deleteTodayNotifiedGames();
 
-          if (!latestGame) {
+          if (deleted === 0) {
             res.writeHead(200, { 'Content-Type': 'application/json' });
             res.end(JSON.stringify({
-              message: 'Nessun gioco notificato da rinotificare',
+              message: 'Nessun gioco notificato oggi da rinotificare',
               timestamp: new Date().toISOString()
             }));
             return;
           }
-
-          // Elimina i giochi con quella data
-          const deleted = await this.databaseManager.deleteNotifiedGamesByDate(latestGame.notifiedAt);
-          console.log(`🗑️ Eliminati ${deleted} giochi per rinotifica`);
 
           // Esegui il controllo e notifica
           await this.checkAndNotifyFreeGames();
 
           res.writeHead(200, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({
-            message: `Eliminati ${deleted} giochi e avviata la notifica`,
+            message: `Eliminati ${deleted} giochi di oggi e avviata la notifica`,
             timestamp: new Date().toISOString()
           }));
         } catch (error) {
