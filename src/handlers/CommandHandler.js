@@ -3,6 +3,9 @@
  * Gestisce tutti i comandi Telegram e le relative risposte
  */
 
+const AnnouncementsService = require('../services/AnnouncementsService');
+const i18n = require('../constants/i18n');
+
 class CommandHandler {
   constructor(bot, databaseManager, epicGamesService, diagnosticsService, adminId) {
     this.bot = bot;
@@ -10,6 +13,7 @@ class CommandHandler {
     this.epicGames = epicGamesService;
     this.diagnostics = diagnosticsService;
     this.adminId = adminId;
+    this.announcementsService = new AnnouncementsService();
     this.setupHandlers();
   }
 
@@ -41,23 +45,12 @@ class CommandHandler {
       try {
         await this.db.saveUser(user);
 
-        const welcomeMessage = `🎮 *Benvenuto nel Bot Epic Games Free!*
-
-Ti notificherò quando ci sono nuovi giochi gratuiti sull'Epic Games Store.
-
-📋 *Comandi disponibili:*
-/start - Mostra questo messaggio
-/subscribe - Iscriviti alle notifiche
-/unsubscribe - Disiscriviti dalle notifiche
-/check - Controlla subito i giochi gratuiti
-/help - Mostra l'aiuto`;
-
-        await this.bot.sendMessage(chatId, welcomeMessage, {
+        await this.bot.sendMessage(chatId, i18n.welcome(), {
           parse_mode: 'Markdown'
         });
       } catch (error) {
         console.error('Errore nel comando /start:', error);
-        await this.bot.sendMessage(chatId, '❌ Si è verificato un errore. Riprova più tardi.');
+        await this.bot.sendMessage(chatId, Messages.errorGeneric);
       }
     });
   }
@@ -69,26 +62,7 @@ Ti notificherò quando ci sono nuovi giochi gratuiti sull'Epic Games Store.
     this.bot.onText(/\/help/, async (msg) => {
       const chatId = msg.chat.id;
 
-      const helpMessage = `🤖 *Aiuto - Bot Epic Games Free*
-
-📋 *Comandi disponibili:*
-• /start - Avvia il bot e mostra il benvenuto
-• /subscribe - Iscriviti alle notifiche dei giochi gratuiti
-• /unsubscribe - Disiscriviti dalle notifiche
-• /check - Controlla immediatamente i giochi gratuiti
-• /help - Mostra questo messaggio di aiuto
-
-⏰ *Quando riceverai le notifiche:*
-Il bot controlla automaticamente i nuovi giochi gratuiti ogni giorno alle 18:00.
-
-ℹ️ *Informazioni:*
-- Il bot monitora l'Epic Games Store
-- Riceverai notifiche solo per nuovi giochi gratuiti
-- Puoi disiscriverti in qualsiasi momento con /unsubscribe
-
-Per domande o problemi, contatta l'amministratore del bot.`;
-
-      await this.bot.sendMessage(chatId, helpMessage, {
+      await this.bot.sendMessage(chatId, i18n.help(), {
         parse_mode: 'Markdown'
       });
     });
@@ -112,7 +86,7 @@ Per domande o problemi, contatta l'amministratore del bot.`;
           // Salva il gruppo
           await this.db.saveGroup(msg.chat, user.username);
           await this.db.updateSubscription(chatId, true);
-          await this.bot.sendMessage(chatId, `✅ Il gruppo "${msg.chat.title}" è ora iscritto alle notifiche!`);
+          await this.bot.sendMessage(chatId, i18n.t('subscribedGroup', { title: msg.chat.title }));
 
           // Notifica admin
           await this.notifyAdminSubscription(msg.chat.title || 'Gruppo sconosciuto', chatId, true, true);
@@ -120,7 +94,7 @@ Per domande o problemi, contatta l'amministratore del bot.`;
           // Salva l'utente privato
           await this.db.saveUser(user);
           await this.db.updateSubscription(user.id, true);
-          await this.bot.sendMessage(chatId, '✅ Sei ora iscritto alle notifiche dei giochi gratuiti!');
+          await this.bot.sendMessage(chatId, i18n.t('subscribedUser'));
 
           // Notifica admin
           const displayName = user.username ? `@${user.username}` : `${user.first_name} ${user.last_name || ''}`.trim();
@@ -128,7 +102,7 @@ Per domande o problemi, contatta l'amministratore del bot.`;
         }
       } catch (error) {
         console.error('Errore nel comando /subscribe:', error);
-        await this.bot.sendMessage(chatId, '❌ Si è verificato un errore. Riprova più tardi.');
+        await this.bot.sendMessage(chatId, i18n.t('errorGeneric'));
       }
     });
   }
@@ -149,13 +123,13 @@ Per domande o problemi, contatta l'amministratore del bot.`;
 
         if (isGroup) {
           await this.db.updateSubscription(chatId, false);
-          await this.bot.sendMessage(chatId, `❌ Il gruppo "${msg.chat.title}" è stato disiscritto dalle notifiche.`);
+          await this.bot.sendMessage(chatId, i18n.t('unsubscribedGroup', { title: msg.chat.title }));
 
           // Notifica admin
           await this.notifyAdminSubscription(msg.chat.title || 'Gruppo sconosciuto', chatId, false, true);
         } else {
           await this.db.updateSubscription(user.id, false);
-          await this.bot.sendMessage(chatId, '❌ Ti sei disiscritto dalle notifiche. Non riceverai più avvisi sui giochi gratuiti. Usa /subscribe per riattivare le notifiche.');
+          await this.bot.sendMessage(chatId, i18n.t('unsubscribedUser'));
 
           // Notifica admin
           const displayName = user.username ? `@${user.username}` : `${user.first_name} ${user.last_name || ''}`.trim();
@@ -163,7 +137,7 @@ Per domande o problemi, contatta l'amministratore del bot.`;
         }
       } catch (error) {
         console.error('Errore nel comando /unsubscribe:', error);
-        await this.bot.sendMessage(chatId, '❌ Si è verificato un errore. Riprova più tardi.');
+        await this.bot.sendMessage(chatId, i18n.t('errorGeneric'));
       }
     });
   }
@@ -181,11 +155,11 @@ Per domande o problemi, contatta l'amministratore del bot.`;
         if (freeGames.length > 0) {
           await this.sendFreeGamesMessage(chatId, freeGames);
         } else {
-          await this.bot.sendMessage(chatId, '😔 Non ci sono giochi gratuiti disponibili in questo momento sull\'Epic Games Store.');
+          await this.bot.sendMessage(chatId, i18n.t('errorNoFreeGames'));
         }
       } catch (error) {
         console.error('Errore nel comando /check:', error);
-        await this.bot.sendMessage(chatId, '❌ Non sono riuscito a controllare i giochi gratuiti. Riprova più tardi.');
+        await this.bot.sendMessage(chatId, i18n.t('errorCheckGames'));
       }
     });
   }
@@ -295,33 +269,26 @@ Per domande o problemi, contatta l'amministratore del bot.`;
       console.log(`📢 Richiesta announce da utente ${user.id}`);
 
       try {
-        const fs = require('fs');
-        const path = require('path');
+        // Ottieni solo l'ultimo annuncio
+        const announcement = this.announcementsService.getLatestAnnouncementForTelegram();
 
-        // Leggi il file announcements.md
-        const announcementsPath = path.join(process.cwd(), 'announcements.md');
-
-        if (!fs.existsSync(announcementsPath)) {
-          await this.bot.sendMessage(chatId, '❌ File announcements.md non trovato.');
+        if (!announcement) {
+          await this.bot.sendMessage(chatId, i18n.t('announceNoAnnouncement'));
           return;
         }
 
-        const content = fs.readFileSync(announcementsPath, 'utf8');
-
-        if (!content.trim()) {
-          await this.bot.sendMessage(chatId, '❌ Il file announcements.md è vuoto.');
-          return;
-        }
+        // Costruisci il messaggio
+        const message = this.announcementsService.buildAnnouncementMessage(announcement);
 
         // Ottieni tutti gli utenti iscritti
         const users = await this.db.getSubscribedUsers();
 
         if (users.length === 0) {
-          await this.bot.sendMessage(chatId, '⚠️ Nessun utente iscritto da notificare.');
+          await this.bot.sendMessage(chatId, i18n.t('announceNoUsers'));
           return;
         }
 
-        await this.bot.sendMessage(chatId, `📢 Invio annuncio a ${users.length} utenti/gruppi...`);
+        await this.bot.sendMessage(chatId, i18n.announceSending(users.length));
 
         let sent = 0;
         let failed = 0;
@@ -329,7 +296,7 @@ Per domande o problemi, contatta l'amministratore del bot.`;
         // Invia a tutti gli utenti iscritti
         for (const user of users) {
           try {
-            await this.bot.sendMessage(user.chatId, content, { parse_mode: 'Markdown' });
+            await this.bot.sendMessage(user.chatId, message, { parse_mode: 'Markdown' });
             sent++;
             // Piccolo delay per evitare rate limiting
             await new Promise(resolve => setTimeout(resolve, 100));
@@ -339,13 +306,12 @@ Per domande o problemi, contatta l'amministratore del bot.`;
           }
         }
 
-        await this.bot.sendMessage(chatId,
-          `✅ Annuncio inviato!\n\n📤 Inviati: ${sent}\n❌ Falliti: ${failed}`);
+        await this.bot.sendMessage(chatId, i18n.announceSent(sent, failed));
         console.log(`✅ Announce completato: ${sent} inviati, ${failed} falliti`);
 
       } catch (error) {
         console.error('Errore nel comando /announce:', error);
-        await this.bot.sendMessage(chatId, '❌ Errore nell\'invio dell\'annuncio: ' + error.message);
+        await this.bot.sendMessage(chatId, `${i18n.t('errorGeneric')} ${error.message}`);
       }
     });
   }
@@ -361,20 +327,13 @@ Per domande o problemi, contatta l'amministratore del bot.`;
     if (!this.adminId) return;
 
     try {
-      const action = isSubscribing ? 'iscritto' : 'disiscritto';
-      const emoji = isSubscribing ? '✅' : '❌';
-      const type = isGroup ? 'Gruppo' : 'Utente';
-
-      const message = `${emoji} *${type} ${action}*
-
-👤 *Nome:* ${name}
-🆔 *ID:* ${id}
-📅 *Data:* ${new Date().toLocaleString('it-IT')}`;
-
+      const message = i18n.adminUserNotified(name, id, isSubscribing, isGroup);
       await this.bot.sendMessage(this.adminId, message, {
         parse_mode: 'Markdown'
       });
 
+      const action = isSubscribing ? 'iscritto' : 'disiscritto';
+      const type = isGroup ? 'Gruppo' : 'Utente';
       console.log(`📢 Notifica admin inviata: ${type} ${name} ${action}`);
     } catch (error) {
       console.error('❌ Errore nell\'inviare notifica all\'admin:', error);

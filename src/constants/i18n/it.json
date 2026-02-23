@@ -1,0 +1,38 @@
+{
+    "welcome": {
+        "title": "🎮 *Benvenuto nel Bot Epic Games Free!*",
+        "description": "Ti notificherò quando ci sono nuovi giochi gratuiti sull'Epic Games Store.",
+        "commands": "📋 *Comandi disponibili:*\n/start - Mostra questo messaggio\n/subscribe - Iscriviti alle notifiche\n/unsubscribe - Disiscriviti dalle notifiche\n/check - Controlla subito i giochi gratuiti\n/help - Mostra l'aiuto"
+    },
+    "help": {
+        "title": "🤖 *Aiuto - Bot Epic Games Free*",
+        "commands": "📋 *Comandi disponibili:*\n• /start - Avvia il bot e mostra il benvenuto\n• /subscribe - Iscriviti alle notifiche dei giochi gratuiti\n• /unsubscribe - Disiscriviti dalle notifiche\n• /check - Controlla immediatamente i giochi gratuiti\n• /help - Mostra questo messaggio di aiuto",
+        "schedule": "⏰ *Quando riceverai le notifiche:*\nIl bot controlla automaticamente i nuovi giochi gratuiti ogni giorno alle 18:00.",
+        "info": "ℹ️ *Informazioni:*\n- Il bot monitora l'Epic Games Store\n- Riceverai notifiche solo per nuovi giochi gratuiti\n- Puoi disiscriverti in qualsiasi momento con /unsubscribe"
+    },
+    "subscribedUser": "✅ Sei ora iscritto alle notifiche dei giochi gratuiti!",
+    "unsubscribedUser": "❌ Ti sei disiscritto dalle notifiche. Non riceverai più avvisi sui giochi gratuiti. Usa /subscribe per riattivare le notifiche.",
+    "subscribedGroup": "✅ Il gruppo \"{title}\" è ora iscritto alle notifiche!",
+    "unsubscribedGroup": "❌ Il gruppo \"{title}\" è stato disiscritto dalle notifiche.",
+    "errorGeneric": "❌ Si è verificato un errore. Riprova più tardi.",
+    "errorCheckGames": "❌ Non sono riuscito a controllare i giochi gratuiti. Riprova più tardi.",
+    "errorNoFreeGames": "😔 Non ci sono giochi gratuiti disponibili in questo momento sull'Epic Games Store.",
+    "adminGenerating": "🔧 Sto generando il report di diagnostica...",
+    "announceNoUsers": "⚠️ Nessun utente iscritto da notificare.",
+    "announceSending": "📢 Invio annuncio a {count} utenti/gruppi...",
+    "announceSent": "✅ Annuncio inviato!\n\n📤 Inviati: {sent}\n❌ Falliti: {failed}",
+    "announceNoAnnouncement": "❌ Nessun annuncio trovato nel file announcements.md.",
+    "diagnostics": {
+        "title": "🔧 *Report Diagnostica Bot Epic Games*",
+        "stats": "📊 *Statistiche Generali:*",
+        "subscribedUsers": "👥 *Utenti Iscritti ({count}):*",
+        "notifiedGames": "🎮 *Giochi Notificati ({count}):*",
+        "databaseInfo": "💾 *Informazioni Database:*",
+        "dbPath": "📁 Percorso: {path}",
+        "dbTables": "🗃️ Tabelle: {tables}",
+        "currentFree": "🆓 *Giochi Gratuiti Attuali ({count}):*",
+        "andOthers": "... e altri {count}"
+    },
+    "checkStarted": "🔄 Controllo manuale dei giochi gratuiti richiesto...",
+    "checkLog": "Controlla i log del server per i dettagli completi"
+}

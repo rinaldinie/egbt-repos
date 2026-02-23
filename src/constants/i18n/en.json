@@ -1,0 +1,38 @@
+{
+    "welcome": {
+        "title": "🎮 *Welcome to Epic Games Free Bot!*",
+        "description": "I will notify you when there are new free games on the Epic Games Store.",
+        "commands": "📋 *Available commands:*\n/start - Show this message\n/subscribe - Subscribe to notifications\n/unsubscribe - Unsubscribe from notifications\n/check - Check free games now\n/help - Show help"
+    },
+    "help": {
+        "title": "🤖 *Help - Epic Games Free Bot*",
+        "commands": "📋 *Available commands:*\n• /start - Start the bot and show welcome\n• /subscribe - Subscribe to free game notifications\n• /unsubscribe - Unsubscribe from notifications\n• /check - Check free games immediately\n• /help - Show this help message",
+        "schedule": "⏰ *When you will receive notifications:*\nThe bot automatically checks for new free games every day at 18:00.",
+        "info": "ℹ️ *Information:*\n- The bot monitors the Epic Games Store\n- You will receive notifications only for new free games\n- You can unsubscribe anytime with /unsubscribe"
+    },
+    "subscribedUser": "✅ You are now subscribed to free game notifications!",
+    "unsubscribedUser": "❌ You have unsubscribed from notifications. You will no longer receive alerts about free games. Use /subscribe to reactivate.",
+    "subscribedGroup": "✅ The group \"{title}\" is now subscribed to notifications!",
+    "unsubscribedGroup": "❌ The group \"{title}\" has been unsubscribed from notifications.",
+    "errorGeneric": "❌ An error occurred. Please try again later.",
+    "errorCheckGames": "❌ I could not check the free games. Please try again later.",
+    "errorNoFreeGames": "😔 There are no free games available right now on the Epic Games Store.",
+    "adminGenerating": "🔧 Generating diagnostic report...",
+    "announceNoUsers": "⚠️ No subscribed users to notify.",
+    "announceSending": "📢 Sending announcement to {count} users/groups...",
+    "announceSent": "✅ Announcement sent!\n\n📤 Sent: {sent}\n❌ Failed: {failed}",
+    "announceNoAnnouncement": "❌ No announcement found in announcements.md.",
+    "diagnostics": {
+        "title": "🔧 *Epic Games Bot Diagnostic Report*",
+        "stats": "📊 *General Statistics:*",
+        "subscribedUsers": "👥 *Subscribed Users ({count}):*",
+        "notifiedGames": "🎮 *Notified Games ({count}):*",
+        "databaseInfo": "💾 *Database Information:*",
+        "dbPath": "📁 Path: {path}",
+        "dbTables": "🗃️ Tables: {tables}",
+        "currentFree": "🆓 *Current Free Games ({count}):*",
+        "andOthers": "... and {count} more"
+    },
+    "checkStarted": "🔄 Manual free games check requested...",
+    "checkLog": "Check server logs for full details"
+}
