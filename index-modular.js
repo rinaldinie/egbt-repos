@@ -330,6 +330,33 @@ class EpicGamesBot {
         return;
       }
 
+      // API endpoint per esportare gli utenti in JSON
+      if (req.method === 'GET' && req.url === '/api/users/export') {
+        try {
+          const users = await this.databaseManager.getAllUsers();
+          const exportData = {
+            timestamp: new Date().toISOString(),
+            totalUsers: users.length,
+            users: users
+          };
+          const json = JSON.stringify(exportData, null, 2);
+          const fileName = `users-export-${Date.now()}.json`;
+
+          res.writeHead(200, {
+            'Content-Type': 'application/json',
+            'Content-Disposition': `attachment; filename="${fileName}"`,
+            'Content-Length': Buffer.byteLength(json)
+          });
+
+          res.end(json);
+          console.log(`📦 Utenti esportati: ${users.length} utenti`);
+        } catch (error) {
+          res.writeHead(500, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'Export failed', details: error.message }));
+        }
+        return;
+      }
+
       // 404 per altre rotte
       res.writeHead(404);
       res.end('Not Found');

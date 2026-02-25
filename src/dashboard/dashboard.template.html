@@ -389,7 +389,16 @@
             </div>
 
             <div class="card">
-                <h2>📤 Esporta Giochi Notificati</h2>
+                <h2>👥 Esporta Utenti</h2>
+                <p style="color: #a0aec0; margin-bottom: 15px; font-size: 0.9em;">
+                    Esporta tutti gli utenti registrati in formato JSON.
+                </p>
+                <a href="/api/users/export" class="btn"
+                    style="display: block; text-align: center; text-decoration: none;">📥 Scarica JSON</a>
+            </div>
+
+            <div class="card">
+                <h2>� Esporta Giochi Notificati</h2>
                 <p style="color: #a0aec0; margin-bottom: 15px; font-size: 0.9em;">
                     Esporta tutti i giochi notificati in formato JSON.
                 </p>
@@ -419,25 +428,6 @@
                 </p>
                 <button id="notifyRecentGames" class="btn" style="background: #9f7aea;">🔔 Rinotifica Ora</button>
                 <div id="notifyRecentResult" class="diagnostics-result"></div>
-            </div>
-
-            <div class="card">
-                <h2>� Istruzioni</h2>
-                <div style="color: #a0aec0; line-height: 1.6;">
-                    <p><strong>Per aggiungere un utente:</strong></p>
-                    <ul style="margin-left: 20px; margin-bottom: 15px;">
-                        <li>Telegram ID: ID dell'utente (positivo)</li>
-                        <li>Chat ID: solitamente uguale al Telegram ID</li>
-                        <li>Nome: nome visualizzato dell'utente</li>
-                    </ul>
-                    <p><strong>Per aggiungere un gruppo:</strong></p>
-                    <ul style="margin-left: 20px;">
-                        <li>Telegram ID: ID del gruppo (negativo, es: -123456789)</li>
-                        <li>Chat ID: uguale al Telegram ID</li>
-                        <li>Nome: nome del gruppo</li>
-                        <li>Spunta "È un gruppo"</li>
-                    </ul>
-                </div>
             </div>
         </div>
 
