@@ -389,6 +389,30 @@
             </div>
 
             <div class="card">
+                <h2>👥 Importa Utenti da JSON</h2>
+                <div id="userImportMessage" class="message"></div>
+                <form id="importUsersForm">
+                    <div class="form-group">
+                        <label>JSON Utenti *</label>
+                        <textarea name="usersJson" required
+                            placeholder="Incolla qui il JSON con gli utenti..."></textarea>
+                        <div class="json-example">Formato atteso (array di oggetti):
+                            [
+                            {
+                            "telegramId": 123456789,
+                            "chatId": 123456789,
+                            "username": "mario_rossi",
+                            "firstName": "Mario Rossi",
+                            "isGroup": false,
+                            "subscribed": true
+                            }
+                            ]</div>
+                    </div>
+                    <button type="submit" class="btn">Importa Utenti</button>
+                </form>
+            </div>
+
+            <div class="card">
                 <h2>👥 Esporta Utenti</h2>
                 <p style="color: #a0aec0; margin-bottom: 15px; font-size: 0.9em;">
                     Esporta tutti gli utenti registrati in formato JSON.
@@ -545,6 +569,67 @@
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ games: gamesArray })
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    messageEl.textContent = `✅ ${result.message}`;
+                    messageEl.className = 'message success';
+                    form.reset();
+                    setTimeout(() => location.reload(), 1500);
+                } else {
+                    messageEl.textContent = '❌ ' + (result.error || 'Errore sconosciuto');
+                    messageEl.className = 'message error';
+                }
+            } catch (error) {
+                messageEl.textContent = '❌ Errore di connessione: ' + error.message;
+                messageEl.className = 'message error';
+            }
+        });
+
+        document.getElementById('importUsersForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const form = e.target;
+            const formData = new FormData(form);
+            const messageEl = document.getElementById('userImportMessage');
+
+            try {
+                // Parsing del JSON inserito
+                const jsonText = formData.get('usersJson');
+                let usersData;
+
+                try {
+                    usersData = JSON.parse(jsonText);
+                } catch (parseError) {
+                    messageEl.textContent = '❌ JSON non valido: ' + parseError.message;
+                    messageEl.className = 'message error';
+                    return;
+                }
+
+                // Normalizza in array se è un singolo oggetto
+                const usersArray = Array.isArray(usersData) ? usersData : [usersData];
+
+                if (usersArray.length === 0) {
+                    messageEl.textContent = '❌ Nessun utente trovato nel JSON';
+                    messageEl.className = 'message error';
+                    return;
+                }
+
+                // Validazione base
+                for (let i = 0; i < usersArray.length; i++) {
+                    const user = usersArray[i];
+                    if (!user.telegramId) {
+                        messageEl.textContent = `❌ Utente ${i + 1}: manca telegramId`;
+                        messageEl.className = 'message error';
+                        return;
+                    }
+                }
+
+                const response = await fetch('/api/users/import', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ users: usersArray })
                 });
 
                 const result = await response.json();

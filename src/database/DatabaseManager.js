@@ -165,6 +165,31 @@ class DatabaseManager {
   }
 
   /**
+   * Salva un utente importato da JSON
+   * @param {Object} data - Dati dell'utente { telegramId, chatId, username, firstName, isGroup, subscribed }
+   */
+  async saveUserFromImport(data) {
+    await this.prisma.user.upsert({
+      where: { telegramId: data.telegramId },
+      update: {
+        chatId: data.chatId || data.telegramId,
+        username: data.username || null,
+        firstName: data.firstName || null,
+        isGroup: data.isGroup || false,
+        subscribed: data.subscribed !== undefined ? data.subscribed : true
+      },
+      create: {
+        telegramId: data.telegramId,
+        chatId: data.chatId || data.telegramId,
+        username: data.username || null,
+        firstName: data.firstName || null,
+        isGroup: data.isGroup || false,
+        subscribed: data.subscribed !== undefined ? data.subscribed : true
+      }
+    });
+  }
+
+  /**
    * Aggiorna lo stato di sottoscrizione di un utente
    */
   async updateSubscription(userId, subscribed) {

@@ -239,6 +239,56 @@ class EpicGamesBot {
         return;
       }
 
+      // API endpoint per importare utenti da JSON
+      if (req.method === 'POST' && req.url === '/api/users/import') {
+        let body = '';
+        req.on('data', chunk => {
+          body += chunk.toString();
+        });
+        req.on('end', async () => {
+          try {
+            const data = JSON.parse(body);
+
+            // Supporta sia un singolo utente che un array di utenti
+            const users = data.users || [data];
+            const results = { success: [], errors: [] };
+
+            for (const user of users) {
+              try {
+                if (!user.telegramId) {
+                  results.errors.push({ user: user.username || user.firstName || 'sconosciuto', error: 'telegramId mancante' });
+                  continue;
+                }
+                await this.databaseManager.saveUserFromImport(user);
+                results.success.push(user.firstName || user.username || `Utente ${user.telegramId}`);
+              } catch (userError) {
+                results.errors.push({ user: user.firstName || user.username || user.telegramId, error: userError.message });
+              }
+            }
+
+            let message;
+
+            if (results.errors.length === 0) {
+              message = `${results.success.length} utente/i importato/i con successo`;
+            } else if (results.success.length === 0) {
+              message = `Nessun utente importato. Errori: ${results.errors.map(e => e.error).join(', ')}`;
+              res.writeHead(400, { 'Content-Type': 'application/json' });
+              res.end(JSON.stringify({ error: message, details: results.errors }));
+              return;
+            } else {
+              message = `${results.success.length} utente/i importato/i, ${results.errors.length} errori`;
+            }
+
+            res.writeHead(201, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ message, results }));
+          } catch (error) {
+            res.writeHead(500, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: error.message }));
+          }
+        });
+        return;
+      }
+
       // API endpoint per eseguire printDiagnostics
       if (req.method === 'GET' && req.url === '/api/diagnostics/print') {
         try {
